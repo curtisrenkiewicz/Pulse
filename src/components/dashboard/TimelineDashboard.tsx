@@ -27,13 +27,13 @@ export function TimelineDashboard() {
   const scrollContainerRef = useRef<HTMLDivElement>(null)
   const todayRef = useRef<HTMLDivElement>(null)
 
-  // Load multiple days of bullet items
+  // Load multiple days of bullet items (only on initial mount)
   useEffect(() => {
     if (!user) return
 
     const loadTimelineItems = async () => {
       const today = new Date()
-      const daysToLoad = focusMode ? 1 : 3 // Load 3 days in timeline mode, 1 in focus mode
+      const daysToLoad = 3 // Always load 3 days of data
       const dayPromises = []
 
       for (let i = 0; i < daysToLoad; i++) {
@@ -85,7 +85,7 @@ export function TimelineDashboard() {
     }
 
     loadTimelineItems()
-  }, [user, focusMode])
+  }, [user]) // Remove focusMode dependency - we always load all days
 
   const formatDisplayDate = (date: Date, isToday: boolean) => {
     if (isToday) return 'Today'
@@ -100,12 +100,16 @@ export function TimelineDashboard() {
   }
 
   const handleItemAdded = (item: Partial<BulletItemType>) => {
-    // Add to today's items
+    // Add to today's items (check for duplicates first)
     setDays(prev => {
       const newDays = [...prev]
       const todayIndex = newDays.findIndex(d => d.isToday)
       if (todayIndex >= 0) {
-        newDays[todayIndex].items.push(item)
+        // Check if item already exists (by id)
+        const exists = newDays[todayIndex].items.some(i => i.id === item.id)
+        if (!exists) {
+          newDays[todayIndex].items.push(item)
+        }
       }
       return newDays
     })
@@ -231,7 +235,9 @@ export function TimelineDashboard() {
           style={{ paddingBottom: '120px' }} // Space for fixed input
         >
           <div className="max-w-[720px] mx-auto px-20 py-10">
-            {days.map((day, dayIndex) => (
+            {days
+              .filter(day => focusMode ? day.isToday : true) // In focus mode, only show today
+              .map((day, dayIndex) => (
               <div 
                 key={day.date} 
                 ref={day.isToday ? todayRef : null}
