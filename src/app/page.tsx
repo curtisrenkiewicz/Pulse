@@ -2,7 +2,7 @@
 
 import { useAuth } from '@/hooks/useAuth'
 import { AuthForm } from '@/components/auth/AuthForm'
-import { Dashboard } from '@/components/dashboard/Dashboard'
+import { TimelineDashboard } from '@/components/dashboard/TimelineDashboard'
 
 export default function Home() {
   const { user, loading } = useAuth()
@@ -15,5 +15,5 @@ export default function Home() {
     )
   }
 
-  return user ? <Dashboard /> : <AuthForm />
+  return user ? <TimelineDashboard /> : <AuthForm />
 }
