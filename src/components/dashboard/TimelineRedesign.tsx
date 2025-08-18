@@ -115,17 +115,23 @@ export function TimelineRedesign() {
       if (reversedResults.length > 0) {
         setOldestLoadedDate(reversedResults[0].date)
       }
-
-      // Scroll to bottom instantly (no animation) to show today's entries
-      setTimeout(() => {
-        if (scrollContainerRef.current) {
-          scrollContainerRef.current.scrollTop = scrollContainerRef.current.scrollHeight
-        }
-      }, 0)
     }
 
     loadTimelineItems()
   }, [user, userTimezone, focusMode])
+  
+  // Scroll to today when exiting focus mode
+  useEffect(() => {
+    // Only scroll when exiting focus mode (going from true to false)
+    if (!focusMode && days.length > 0) {
+      // Use double requestAnimationFrame to ensure DOM is fully updated
+      requestAnimationFrame(() => {
+        requestAnimationFrame(() => {
+          scrollToToday()
+        })
+      })
+    }
+  }, [focusMode, days.length])
 
   const formatDisplayDate = (date: Date, isToday: boolean) => {
     if (isToday) return 'Today'
@@ -302,22 +308,28 @@ export function TimelineRedesign() {
     setFocusMode(!focusMode)
   }
 
-  // Keyboard shortcut for focus mode
+  // Keyboard shortcuts for focus mode
   useEffect(() => {
     const handleKeyPress = (e: KeyboardEvent) => {
-      // Only trigger on 'f' key without modifiers (not Cmd+F or Ctrl+F)
-      // Also ignore if user is typing in an input/textarea
+      // Ignore if user is typing in an input/textarea
       const isTyping = e.target instanceof HTMLInputElement || 
                       e.target instanceof HTMLTextAreaElement
       
+      // Toggle focus mode with 'f' key (without modifiers)
       if (e.key === 'f' && !e.metaKey && !e.ctrlKey && !e.altKey && !isTyping) {
         e.preventDefault()
         toggleFocusMode()
       }
+      
+      // Exit focus mode with ESC key (only when focus mode is active)
+      if (e.key === 'Escape' && focusMode && !isTyping) {
+        e.preventDefault()
+        setFocusMode(false)
+      }
     }
     window.addEventListener('keydown', handleKeyPress)
     return () => window.removeEventListener('keydown', handleKeyPress)
-  }, [])
+  }, [focusMode])
 
   // Load more historical data when scrolling near top
   const loadMoreDays = async () => {
@@ -466,8 +478,8 @@ export function TimelineRedesign() {
               </div>
             )}
             
-            {/* Beginning of journey message */}
-            {reachedBeginning && firstEntryDate && days.length > 0 && (
+            {/* Beginning of journey message - only show when not in focus mode and showing multiple days */}
+            {!focusMode && days.length > 1 && reachedBeginning && firstEntryDate && (
               <div className="mb-12 text-center">
                 <div className="inline-block">
                   <div className="h-[1px] bg-[rgba(0,0,0,0.08)] w-32 mb-6"></div>
