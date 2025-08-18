@@ -305,7 +305,12 @@ export function TimelineRedesign() {
   // Keyboard shortcut for focus mode
   useEffect(() => {
     const handleKeyPress = (e: KeyboardEvent) => {
-      if (e.key === 'f' && e.metaKey) {
+      // Only trigger on 'f' key without modifiers (not Cmd+F or Ctrl+F)
+      // Also ignore if user is typing in an input/textarea
+      const isTyping = e.target instanceof HTMLInputElement || 
+                      e.target instanceof HTMLTextAreaElement
+      
+      if (e.key === 'f' && !e.metaKey && !e.ctrlKey && !e.altKey && !isTyping) {
         e.preventDefault()
         toggleFocusMode()
       }
