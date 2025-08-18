@@ -9,11 +9,16 @@ export function TimezoneDetector() {
   const [currentBrowserTimezone, setCurrentBrowserTimezone] = useState<string>('')
 
   useEffect(() => {
+    // Skip if userTimezone hasn't loaded yet
+    if (!userTimezone || userTimezone === 'UTC') {
+      return
+    }
+    
     const browserTz = detectTimezone()
     setCurrentBrowserTimezone(browserTz)
     
     // Check if browser timezone differs from saved timezone
-    if (userTimezone && userTimezone !== 'UTC' && browserTz !== userTimezone) {
+    if (browserTz !== userTimezone) {
       setShowNotification(true)
     }
   }, [userTimezone, detectTimezone])

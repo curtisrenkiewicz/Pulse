@@ -20,42 +20,105 @@ export function useAuth() {
 
   // Get or create user profile with timezone
   const ensureUserProfile = async (userId: string) => {
-    // First try to get existing profile
-    const { data: profile } = await supabase
-      .from('user_profiles')
-      .select('timezone')
-      .eq('id', userId)
-      .single()
+    try {
+      // First try to get existing profile
+      const { data: profile, error: fetchError } = await supabase
+        .from('user_profiles')
+        .select('timezone')
+        .eq('id', userId)
+        .single()
 
-    if (profile) {
-      setUserTimezone(profile.timezone || 'UTC')
-      return profile.timezone
+      if (fetchError && fetchError.code !== 'PGRST116') {
+        // If error is not "no rows", log it but continue
+        console.warn('Error fetching user profile:', fetchError)
+        // Use detected timezone as fallback
+        const detectedTimezone = detectTimezone()
+        setUserTimezone(detectedTimezone)
+        return detectedTimezone
+      }
+
+      if (profile) {
+        setUserTimezone(profile.timezone || 'UTC')
+        return profile.timezone
+      }
+
+      // Create profile if it doesn't exist
+      const detectedTimezone = detectTimezone()
+      const { data: newProfile, error: insertError } = await supabase
+        .from('user_profiles')
+        .insert({ 
+          id: userId, 
+          timezone: detectedTimezone 
+        })
+        .select('timezone')
+        .single()
+
+      if (insertError) {
+        console.warn('Error creating user profile:', insertError)
+        // Use detected timezone as fallback
+        setUserTimezone(detectedTimezone)
+        return detectedTimezone
+      }
+
+      setUserTimezone(newProfile?.timezone || detectedTimezone)
+      return newProfile?.timezone || detectedTimezone
+    } catch (error) {
+      console.error('Error in ensureUserProfile:', error)
+      // Always fall back to detected timezone
+      const detectedTimezone = detectTimezone()
+      setUserTimezone(detectedTimezone)
+      return detectedTimezone
     }
-
-    // Create profile if it doesn't exist
-    const detectedTimezone = detectTimezone()
-    const { data: newProfile } = await supabase
-      .from('user_profiles')
-      .insert({ 
-        id: userId, 
-        timezone: detectedTimezone 
-      })
-      .select('timezone')
-      .single()
-
-    setUserTimezone(newProfile?.timezone || detectedTimezone)
-    return newProfile?.timezone || detectedTimezone
   }
 
   useEffect(() => {
-    // Get initial session
-    supabase.auth.getSession().then(async ({ data: { session } }) => {
-      setUser(session?.user ?? null)
-      if (session?.user) {
-        await ensureUserProfile(session.user.id)
+    // Prevent multiple simultaneous calls
+    let mounted = true
+    
+    // Add a timeout fallback
+    const timeoutId = setTimeout(() => {
+      if (mounted) {
+        setUser(null)
+        setLoading(false)
       }
-      setLoading(false)
-    })
+    }, 10000)
+    
+    // Try to get session
+    const getInitialSession = async () => {
+      try {
+        const { data: { session }, error } = await supabase.auth.getSession()
+        
+        if (!mounted) return
+        
+        clearTimeout(timeoutId)
+        
+        if (error) {
+          setUser(null)
+          setLoading(false)
+          return
+        }
+        
+        setUser(session?.user ?? null)
+        
+        if (session?.user) {
+          await ensureUserProfile(session.user.id)
+        }
+        
+        setLoading(false)
+      } catch (error) {
+        if (!mounted) return
+        clearTimeout(timeoutId)
+        setUser(null)
+        setLoading(false)
+      }
+    }
+    
+    getInitialSession()
+    
+    return () => {
+      mounted = false
+      clearTimeout(timeoutId)
+    }
 
     // Listen for auth changes
     const { data: { subscription } } = supabase.auth.onAuthStateChange(

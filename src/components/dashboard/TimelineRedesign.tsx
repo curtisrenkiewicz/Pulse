@@ -87,11 +87,11 @@ export function TimelineRedesign() {
             .select(`
               id,
               date,
-              bullet_items (*)
+              bullet_items(*)
             `)
             .eq('user_id', user.id)
             .eq('date', dateStr)
-            .single()
+            .maybeSingle()
             .then(({ data, error }) => {
               // Always create an entry for each day, even if empty
               return {
@@ -343,11 +343,11 @@ export function TimelineRedesign() {
           .select(`
             id,
             date,
-            bullet_items (*)
+            bullet_items(*)
           `)
           .eq('user_id', user.id)
           .eq('date', dateStr)
-          .single()
+          .maybeSingle()
           .then(({ data, error }) => {
             return {
               date: dateStr,
