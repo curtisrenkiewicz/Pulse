@@ -77,7 +77,7 @@ export function TimelineRedesign() {
     const loadTimelineItems = async () => {
       // Add a small delay when switching modes to allow animations to start
       if (loading) {
-        await new Promise(resolve => setTimeout(resolve, 150))
+        await new Promise(resolve => setTimeout(resolve, 75)) // Reduced from 150ms to 75ms
       }
       
       const today = new Date()
@@ -147,7 +147,7 @@ export function TimelineRedesign() {
       // Small delay to ensure the input is rendered and animations have started
       setTimeout(() => {
         inputRef.current?.focus()
-      }, 300)
+      }, 150) // Reduced from 300ms to 150ms
     }
   }, [focusMode, loading])
 
@@ -332,7 +332,7 @@ export function TimelineRedesign() {
       setFocusMode(newFocusMode)
       // Hide chat sidebar when entering focus mode, show when exiting
       setShowChatSidebar(!newFocusMode)
-    }, 100)
+    }, 50) // Reduced from 100ms to 50ms
   }
 
   // Keyboard shortcuts for focus mode
@@ -355,7 +355,7 @@ export function TimelineRedesign() {
         setTimeout(() => {
           setFocusMode(false)
           setShowChatSidebar(true) // Show chat sidebar when exiting focus mode
-        }, 100)
+        }, 50) // Reduced from 100ms to 50ms
       }
     }
     window.addEventListener('keydown', handleKeyPress)
