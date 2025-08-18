@@ -20,7 +20,7 @@ export default function RootLayout({
 }>) {
   return (
     <html lang="en">
-      <body className={`${inter.variable} ${inter.className} antialiased`}>
+      <body className={`${inter.variable} ${inter.className} antialiased min-h-screen`}>
         <QueryProvider>
           {children}
         </QueryProvider>

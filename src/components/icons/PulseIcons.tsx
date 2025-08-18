@@ -159,6 +159,31 @@ export const ArrowUpIcon = ({ className = "", size = 18 }: IconProps) => (
   </svg>
 )
 
+export const SidebarIcon = ({ className = "", size = 20 }: IconProps) => (
+  <svg 
+    width={size} 
+    height={size} 
+    viewBox="0 0 20 20" 
+    fill="none" 
+    className={className}
+  >
+    <path d="M2.29297 6.45801C2.29297 5.0773 3.41226 3.95801 4.79297 3.95801H15.2096C16.5904 3.95801 17.7096 5.0773 17.7096 6.45801V13.5413C17.7096 14.9221 16.5904 16.0413 15.2096 16.0413H4.79297C3.41226 16.0413 2.29297 14.9221 2.29297 13.5413V6.45801Z" stroke="currentColor" strokeWidth="1.5" strokeLinejoin="round"/>
+    <path d="M5.875 7.16699V10.0003V12.8337" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"/>
+  </svg>
+)
+
+export const FocusModeIcon = ({ className = "", size = 20 }: IconProps) => (
+  <svg 
+    width={size} 
+    height={size} 
+    viewBox="0 0 20 20" 
+    fill="none" 
+    className={className}
+  >
+    <path d="M3.125 6.66667V4.79167C3.125 3.87119 3.87119 3.125 4.79167 3.125H6.66667M3.125 13.3333V15.2083C3.125 16.1288 3.87119 16.875 4.79167 16.875H6.66667M13.3333 3.125H15.2083C16.1288 3.125 16.875 3.87119 16.875 4.79167V6.66667M16.875 13.3333V15.2083C16.875 16.1288 16.1288 16.875 15.2083 16.875H13.3333M11.6667 11.1667L10 7.5L8.33333 11.1667M11.6667 11.1667L12.2917 12.5417M11.6667 11.1667H8.33333M8.33333 11.1667L7.70833 12.5417" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"/>
+  </svg>
+)
+
 export const PulseyAvatar = ({ className = "", size = 20 }: IconProps) => (
   <svg 
     width={size} 
