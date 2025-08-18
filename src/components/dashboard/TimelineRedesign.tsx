@@ -580,6 +580,7 @@ export function TimelineRedesign() {
                   {/* Active items */}
                   {day.items.filter(item => item.status !== 'cancelled').map((item, index) => {
                     const activeItems = day.items.filter(i => i.status !== 'cancelled')
+                    // Last item should NOT have a line if there are no cancelled items after it
                     const isLast = index === activeItems.length - 1 && !day.items.some(i => i.status === 'cancelled')
                     
                     return (
@@ -596,12 +597,6 @@ export function TimelineRedesign() {
                   {/* Cancelled items as a single entry */}
                   {day.items.filter(item => item.status === 'cancelled').length > 0 && (
                     <div className="relative">
-                      {/* Line from last active item to cancelled */}
-                      {day.items.filter(i => i.status !== 'cancelled').length > 0 && (
-                        <div 
-                          className="absolute left-[10px] -top-[1px] w-[1.5px] h-[21px] bg-[rgba(0,0,0,0.12)]"
-                        />
-                      )}
                       <div className="flex gap-4 items-start w-[720px] min-h-10">
                         <div className="flex flex-col items-center min-h-10 w-5">
                           <div className="w-5 h-5 flex items-center justify-center">

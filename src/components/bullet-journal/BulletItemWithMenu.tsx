@@ -64,9 +64,7 @@ export function BulletItemWithMenu({ item, isLast = false, onStateChange }: Bull
         
         {/* Connecting line */}
         {!isLast && (
-          <div className="flex-1 w-full flex items-center justify-center min-h-4">
-            <div className="w-[1.5px] h-full bg-[rgba(0,0,0,0.12)]" />
-          </div>
+          <div className="bg-black/20" style={{ width: '1.5px', height: '24px', marginTop: '0px' }} />
         )}
       </div>
       
