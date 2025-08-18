@@ -18,7 +18,7 @@ import {
   PulseyAvatar,
   SidebarIcon,
   FocusModeIcon,
-  CircleDashedIcon
+  DotIcon
 } from '@/components/icons/PulseIcons'
 import { IconButton } from '@/components/ui/IconButton'
 import type { BulletItem as BulletItemType } from '@/lib/types'
@@ -589,13 +589,6 @@ export function TimelineRedesign() {
                           isLast={isLast}
                           onStateChange={(newState) => handleStateChange(item, newState)}
                         />
-                        {/* Vertical line - connects to next item or cancelled section */}
-                        {!isLast && (
-                          <div 
-                            className="absolute left-[10px] top-[20px] w-[1px] bg-[rgba(0,0,0,0.08)]"
-                            style={{ height: 'calc(100% - 0px)' }}
-                          />
-                        )}
                       </div>
                     )
                   })}
@@ -606,13 +599,13 @@ export function TimelineRedesign() {
                       {/* Line from last active item to cancelled */}
                       {day.items.filter(i => i.status !== 'cancelled').length > 0 && (
                         <div 
-                          className="absolute left-[10px] -top-[1px] w-[1px] h-[21px] bg-[rgba(0,0,0,0.08)]"
+                          className="absolute left-[10px] -top-[1px] w-[1.5px] h-[21px] bg-[rgba(0,0,0,0.12)]"
                         />
                       )}
                       <div className="flex gap-4 items-start w-[720px] min-h-10">
                         <div className="flex flex-col items-center min-h-10 w-5">
                           <div className="w-5 h-5 flex items-center justify-center">
-                            <CircleDashedIcon size={20} />
+                            <DotIcon size={16} />
                           </div>
                         </div>
                         <div className="flex-1 pb-2 pt-0">
