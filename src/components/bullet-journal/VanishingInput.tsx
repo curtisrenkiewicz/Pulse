@@ -167,6 +167,12 @@ export const VanishingInput = forwardRef<VanishingInputRef, VanishingInputProps>
       e.preventDefault()
       vanishAndSubmit()
     }
+    
+    // Unfocus input when ESC is pressed
+    if (e.key === 'Escape') {
+      e.preventDefault()
+      inputRef.current?.blur()
+    }
   }
 
   const vanishAndSubmit = () => {
