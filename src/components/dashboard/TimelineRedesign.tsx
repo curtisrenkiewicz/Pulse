@@ -7,6 +7,7 @@ import { getUserDateString, getTodayInUserTimezone } from '@/lib/dateUtils'
 import { TimezoneDetector } from '@/components/TimezoneDetector'
 import { VanishingInput } from '@/components/bullet-journal/VanishingInput'
 import { BulletItemWithMenu } from '@/components/bullet-journal/BulletItemWithMenu'
+import { FocusModeHeader } from '@/components/dashboard/FocusModeHeader'
 import { getDefaultSymbol, getSymbolForStatus } from '@/lib/bulletSymbols'
 import { 
   ClockIcon, 
@@ -34,6 +35,7 @@ export function TimelineRedesign() {
   const [days, setDays] = useState<DaySection[]>([])
   const [loading, setLoading] = useState(true)
   const [focusMode, setFocusMode] = useState(false)
+  const [showChatSidebar, setShowChatSidebar] = useState(true)
   const [loadingMore, setLoadingMore] = useState(false)
   const [oldestLoadedDate, setOldestLoadedDate] = useState<string | null>(null)
   const [firstEntryDate, setFirstEntryDate] = useState<string | null>(null)
@@ -72,6 +74,11 @@ export function TimelineRedesign() {
     if (!user || !userTimezone) return
 
     const loadTimelineItems = async () => {
+      // Add a small delay when switching modes to allow animations to start
+      if (loading) {
+        await new Promise(resolve => setTimeout(resolve, 150))
+      }
+      
       const today = new Date()
       const daysToLoad = focusMode ? 1 : 14 // Load 14 days instead of 3
       const dayPromises = []
@@ -305,7 +312,16 @@ export function TimelineRedesign() {
   }
 
   const toggleFocusMode = () => {
-    setFocusMode(!focusMode)
+    // Set loading to trigger fade out
+    setLoading(true)
+    
+    // Small delay before changing mode for smooth transition
+    setTimeout(() => {
+      const newFocusMode = !focusMode
+      setFocusMode(newFocusMode)
+      // Hide chat sidebar when entering focus mode, show when exiting
+      setShowChatSidebar(!newFocusMode)
+    }, 100)
   }
 
   // Keyboard shortcuts for focus mode
@@ -324,7 +340,11 @@ export function TimelineRedesign() {
       // Exit focus mode with ESC key (only when focus mode is active)
       if (e.key === 'Escape' && focusMode && !isTyping) {
         e.preventDefault()
-        setFocusMode(false)
+        setLoading(true) // Trigger fade out
+        setTimeout(() => {
+          setFocusMode(false)
+          setShowChatSidebar(true) // Show chat sidebar when exiting focus mode
+        }, 100)
       }
     }
     window.addEventListener('keydown', handleKeyPress)
@@ -446,28 +466,39 @@ export function TimelineRedesign() {
       {/* Main Content Area */}
       <div className="flex-1 flex flex-col relative">
         {/* Header - 40px height, sticky */}
-        <div className="sticky top-0 h-10 z-20 flex items-center justify-between px-3">
-          <div className="flex items-center gap-3">
-            <IconButton size={20}>
-              <SidebarIcon className="text-[#ADADAD]" size={20} />
+        {focusMode ? (
+          <FocusModeHeader onExit={() => {
+            setLoading(true)
+            setTimeout(() => {
+              setFocusMode(false)
+              setShowChatSidebar(true)
+            }, 100)
+          }} />
+        ) : (
+          <div className="sticky top-0 h-10 z-20 flex items-center justify-between px-3">
+            <div className="flex items-center gap-3">
+              <IconButton size={20}>
+                <SidebarIcon className="text-[#ADADAD]" size={20} />
+              </IconButton>
+            </div>
+            <IconButton 
+              size={20} 
+              onClick={toggleFocusMode}
+              className={focusMode ? 'bg-black/5' : ''}
+            >
+              <FocusModeIcon className="text-[#ADADAD]" size={20} />
             </IconButton>
           </div>
-          <IconButton 
-            size={20} 
-            onClick={toggleFocusMode}
-            className={focusMode ? 'bg-black/5' : ''}
-          >
-            <FocusModeIcon className="text-[#ADADAD]" size={20} />
-          </IconButton>
-        </div>
+        )}
 
-        {/* Timeline Content with scroll */}
+        {/* Timeline Content with scroll and fade transition */}
         <div 
           ref={scrollContainerRef}
-          className="flex-1 overflow-y-auto pb-40"
+          className="flex-1 overflow-y-auto pb-40 transition-opacity duration-200"
           style={{
             maskImage: 'linear-gradient(to bottom, black 0%, black calc(100% - 80px), transparent 100%)',
-            WebkitMaskImage: 'linear-gradient(to bottom, black 0%, black calc(100% - 80px), transparent 100%)'
+            WebkitMaskImage: 'linear-gradient(to bottom, black 0%, black calc(100% - 80px), transparent 100%)',
+            opacity: loading ? 0 : 1
           }}
         >
           <div className="max-w-[776px] mx-auto px-3 pt-10">
@@ -629,8 +660,15 @@ export function TimelineRedesign() {
         </div>
       </div>
 
-      {/* Pulsey Chat Sidebar */}
-      <div className="bg-[#fcfcfc] border-l border-[rgba(0,0,0,0.07)] w-72 flex flex-col">
+      {/* Pulsey Chat Sidebar with slide transition */}
+      <div 
+        className={`bg-[#fcfcfc] border-l border-[rgba(0,0,0,0.07)] w-72 flex flex-col transition-all duration-300 ease-in-out ${
+          showChatSidebar ? 'translate-x-0' : 'translate-x-full'
+        }`}
+        style={{ 
+          position: 'relative',
+          marginRight: showChatSidebar ? '0' : '-288px' // -288px is negative width of sidebar
+        }}>
         {/* Header - 40px height to match main header */}
         <div className="h-10 flex items-center justify-between px-2 border-b border-[rgba(0,0,0,0.07)]">
           <div className="flex items-center gap-3">
@@ -641,7 +679,10 @@ export function TimelineRedesign() {
               <PencilLineIcon className="text-[rgba(0,0,0,0.44)]" size={20} />
             </IconButton>
           </div>
-          <IconButton size={20}>
+          <IconButton 
+            size={20}
+            onClick={() => setShowChatSidebar(false)}
+          >
             <CrossLargeIcon className="text-[rgba(0,0,0,0.44)]" size={20} />
           </IconButton>
         </div>
@@ -683,6 +724,17 @@ export function TimelineRedesign() {
           </div>
         </div>
       </div>
+      
+      {/* Floating Pulsey Avatar with fade transition */}
+      <button
+        onClick={() => setShowChatSidebar(true)}
+        className={`fixed bottom-6 right-6 cursor-pointer hover:opacity-80 transition-all duration-300 ${
+          showChatSidebar ? 'opacity-0 pointer-events-none scale-50' : 'opacity-100 scale-100'
+        }`}
+        style={{ zIndex: 30 }}
+      >
+        <PulseyAvatar size={40} />
+      </button>
     </div>
   )
 }
