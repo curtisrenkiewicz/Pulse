@@ -5,7 +5,7 @@ import { useAuth } from '@/hooks/useAuth'
 import { supabase } from '@/lib/supabase'
 import { getUserDateString, getTodayInUserTimezone } from '@/lib/dateUtils'
 import { TimezoneDetector } from '@/components/TimezoneDetector'
-import { VanishingInput } from '@/components/bullet-journal/VanishingInput'
+import { VanishingInput, type VanishingInputRef } from '@/components/bullet-journal/VanishingInput'
 import { BulletItemWithMenu } from '@/components/bullet-journal/BulletItemWithMenu'
 import { FocusModeHeader } from '@/components/dashboard/FocusModeHeader'
 import { getDefaultSymbol, getSymbolForStatus } from '@/lib/bulletSymbols'
@@ -44,6 +44,7 @@ export function TimelineRedesign() {
   const scrollContainerRef = useRef<HTMLDivElement>(null)
   const bottomRef = useRef<HTMLDivElement>(null)
   const todayRef = useRef<HTMLDivElement>(null)
+  const inputRef = useRef<VanishingInputRef>(null)
 
   // Fetch the user's first journal entry date
   useEffect(() => {
@@ -139,6 +140,16 @@ export function TimelineRedesign() {
       })
     }
   }, [focusMode, days.length])
+  
+  // Auto-focus input when entering focus mode
+  useEffect(() => {
+    if (focusMode && !loading) {
+      // Small delay to ensure the input is rendered and animations have started
+      setTimeout(() => {
+        inputRef.current?.focus()
+      }, 300)
+    }
+  }, [focusMode, loading])
 
   const formatDisplayDate = (date: Date, isToday: boolean) => {
     if (isToday) return 'Today'
@@ -654,6 +665,7 @@ export function TimelineRedesign() {
           
           {/* Input field */}
           <VanishingInput 
+            ref={inputRef}
             onSubmit={handleItemAdded}
             placeholder="What's on your mind?"
           />

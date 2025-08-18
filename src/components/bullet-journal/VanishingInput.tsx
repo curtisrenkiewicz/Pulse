@@ -1,18 +1,30 @@
 'use client'
 
-import { useCallback, useEffect, useRef, useState } from 'react'
+import { useCallback, useEffect, useRef, useState, forwardRef, useImperativeHandle } from 'react'
 
 interface VanishingInputProps {
   onSubmit?: (text: string) => void
   placeholder?: string
 }
 
-export function VanishingInput({ onSubmit, placeholder = "What's on your mind?" }: VanishingInputProps) {
+export interface VanishingInputRef {
+  focus: () => void
+}
+
+export const VanishingInput = forwardRef<VanishingInputRef, VanishingInputProps>(
+  ({ onSubmit, placeholder = "What's on your mind?" }, ref) => {
   const canvasRef = useRef<HTMLCanvasElement>(null)
   const newDataRef = useRef<any[]>([])
   const inputRef = useRef<HTMLTextAreaElement>(null)
   const [value, setValue] = useState('')
   const [animating, setAnimating] = useState(false)
+  
+  // Expose focus method to parent
+  useImperativeHandle(ref, () => ({
+    focus: () => {
+      inputRef.current?.focus()
+    }
+  }))
 
   // Auto-resize textarea
   useEffect(() => {
@@ -278,4 +290,6 @@ export function VanishingInput({ onSubmit, placeholder = "What's on your mind?" 
       </form>
     </div>
   )
-}
+})
+
+VanishingInput.displayName = 'VanishingInput'
