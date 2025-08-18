@@ -3,6 +3,8 @@
 import { useState, useEffect, useRef } from 'react'
 import { useAuth } from '@/hooks/useAuth'
 import { supabase } from '@/lib/supabase'
+import { getUserDateString, getTodayInUserTimezone } from '@/lib/dateUtils'
+import { TimezoneDetector } from '@/components/TimezoneDetector'
 import { VanishingInput } from '@/components/bullet-journal/VanishingInput'
 import { BulletItemWithMenu } from '@/components/bullet-journal/BulletItemWithMenu'
 import { getDefaultSymbol, getSymbolForStatus } from '@/lib/bulletSymbols'
@@ -28,7 +30,7 @@ interface DaySection {
 }
 
 export function TimelineRedesign() {
-  const { user, signOut } = useAuth()
+  const { user, userTimezone, signOut } = useAuth()
   const [days, setDays] = useState<DaySection[]>([])
   const [loading, setLoading] = useState(true)
   const [focusMode, setFocusMode] = useState(false)
@@ -43,7 +45,7 @@ export function TimelineRedesign() {
 
   // Fetch the user's first journal entry date
   useEffect(() => {
-    if (!user) return
+    if (!user || !userTimezone) return
     
     const fetchFirstEntryDate = async () => {
       // Query for the oldest bullet item
@@ -56,18 +58,18 @@ export function TimelineRedesign() {
         .single()
       
       if (data && !error) {
-        // Store the date of the first entry
-        const firstDate = new Date(data.created_at).toISOString().split('T')[0]
+        // Store the date of the first entry in user's timezone
+        const firstDate = getUserDateString(new Date(data.created_at), userTimezone)
         setFirstEntryDate(firstDate)
       }
     }
     
     fetchFirstEntryDate()
-  }, [user])
+  }, [user, userTimezone])
 
   // Load multiple days of bullet items
   useEffect(() => {
-    if (!user) return
+    if (!user || !userTimezone) return
 
     const loadTimelineItems = async () => {
       const today = new Date()
@@ -77,7 +79,7 @@ export function TimelineRedesign() {
       for (let i = 0; i < daysToLoad; i++) {
         const date = new Date(today)
         date.setDate(date.getDate() - i)
-        const dateStr = date.toISOString().split('T')[0]
+        const dateStr = getUserDateString(date, userTimezone)
         
         dayPromises.push(
           supabase
@@ -123,7 +125,7 @@ export function TimelineRedesign() {
     }
 
     loadTimelineItems()
-  }, [user, focusMode])
+  }, [user, userTimezone, focusMode])
 
   const formatDisplayDate = (date: Date, isToday: boolean) => {
     if (isToday) return 'Today'
@@ -141,10 +143,10 @@ export function TimelineRedesign() {
   }
 
   const handleItemAdded = async (text: string) => {
-    if (!text.trim() || !user) return
+    if (!text.trim() || !user || !userTimezone) return
 
     // Create the item in the database first
-    const today = new Date().toISOString().split('T')[0]
+    const today = getTodayInUserTimezone(userTimezone)
     
     // Get or create today's daily log
     let { data: dailyLog } = await supabase
@@ -200,10 +202,10 @@ export function TimelineRedesign() {
       
       // If today doesn't exist, create it
       if (todayIndex === -1) {
-        const today = new Date()
+        const today = getTodayInUserTimezone(userTimezone)
         // Add to end since days are in chronological order (oldest first)
         newDays.push({
-          date: today.toISOString().split('T')[0],
+          date: today,
           displayDate: 'Today',
           items: [newItem],
           isToday: true
@@ -314,7 +316,7 @@ export function TimelineRedesign() {
 
   // Load more historical data when scrolling near top
   const loadMoreDays = async () => {
-    if (loadingMore || !oldestLoadedDate || !user || focusMode || reachedBeginning) return
+    if (loadingMore || !oldestLoadedDate || !user || !userTimezone || focusMode || reachedBeginning) return
     
     setLoadingMore(true)
     
@@ -326,7 +328,7 @@ export function TimelineRedesign() {
     for (let i = 1; i <= 14; i++) {
       const date = new Date(oldestDate)
       date.setDate(date.getDate() - i)
-      const dateStr = date.toISOString().split('T')[0]
+      const dateStr = getUserDateString(date, userTimezone)
       
       // Check if we've reached before the first entry date
       if (firstEntryDate && dateStr < firstEntryDate) {
@@ -412,7 +414,7 @@ export function TimelineRedesign() {
       scrollContainer.removeEventListener('scroll', handleScroll)
       clearTimeout(scrollTimeout)
     }
-  }, [loadingMore, oldestLoadedDate, focusMode, reachedBeginning])
+  }, [loadingMore, oldestLoadedDate, focusMode, reachedBeginning, userTimezone])
   
   // Scroll to today function
   const scrollToToday = () => {
@@ -423,6 +425,7 @@ export function TimelineRedesign() {
 
   return (
     <div className="h-screen bg-white flex overflow-hidden">
+      <TimezoneDetector />
       {/* Main Content Area */}
       <div className="flex-1 flex flex-col relative">
         {/* Header - 40px height, sticky */}
