@@ -171,7 +171,14 @@ export function TimelineRedesign() {
   }
 
   const handleItemAdded = async (text: string) => {
-    if (!text.trim() || !user || !userTimezone) return
+    if (!text.trim() || !user || !userTimezone) {
+      console.error('Missing required data:', { 
+        text: text.trim(), 
+        user: !!user, 
+        userTimezone: !!userTimezone 
+      })
+      return
+    }
 
     // Create the item in the database first
     const today = getTodayInUserTimezone(userTimezone)
@@ -194,7 +201,10 @@ export function TimelineRedesign() {
         .single()
       
       if (newLogError) {
-        console.error('Failed to create daily log:', newLogError)
+        console.error('Failed to create daily log:', {
+          error: newLogError,
+          insertData: { user_id: user.id, date: today }
+        })
         return
       }
       logId = newLog.id
@@ -213,14 +223,24 @@ export function TimelineRedesign() {
         text,
         bullet_type: category,
         symbol,
-        status: 'active',
+        status: 'incomplete',
         created_at: new Date().toISOString()
       })
       .select()
       .single()
 
     if (itemError) {
-      console.error('Failed to create item:', itemError)
+      console.error('Failed to create item:', {
+        error: itemError,
+        insertData: {
+          daily_log_id: logId,
+          user_id: user.id,
+          text,
+          bullet_type: category,
+          symbol,
+          status: 'incomplete'
+        }
+      })
       return
     }
 
@@ -320,7 +340,7 @@ export function TimelineRedesign() {
       }
       
       const data = await response.json()
-      return data.category || 'task'
+      return data.type || 'task'
     } catch (error) {
       console.error('AI categorization failed:', error)
       return 'task'
