@@ -106,7 +106,7 @@ export const VanishingInput = forwardRef<VanishingInputRef, VanishingInputProps>
     return () => window.removeEventListener('keydown', handleKeyDown)
   }, [])
 
-  const animate = (start: number) => {
+  const animate = (start: number, textToSubmit: string) => {
     const animateFrame = (pos: number) => {
       requestAnimationFrame(() => {
         const newArr = []
@@ -151,10 +151,11 @@ export const VanishingInput = forwardRef<VanishingInputRef, VanishingInputProps>
           const nextPos = pos + 8
           animateFrame(nextPos)
         } else {
+          // Now we use the captured text value
           setValue('')
           setAnimating(false)
           if (onSubmit) {
-            onSubmit(inputRef.current?.value || '')
+            onSubmit(textToSubmit)
           }
         }
       })
@@ -178,6 +179,9 @@ export const VanishingInput = forwardRef<VanishingInputRef, VanishingInputProps>
   const vanishAndSubmit = () => {
     if (!value.trim()) return
     
+    // Capture the value before any state changes
+    const textToSubmit = value
+    
     setAnimating(true)
     draw()
 
@@ -187,7 +191,7 @@ export const VanishingInput = forwardRef<VanishingInputRef, VanishingInputProps>
         (prev, current) => (current.x < prev ? current.x : prev),
         1600
       )
-      animate(minX)
+      animate(minX, textToSubmit)
     }
   }
 
