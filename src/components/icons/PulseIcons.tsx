@@ -111,6 +111,18 @@ export const CircleDashedIcon = ({ className = "", size = 20 }: IconProps) => (
   </svg>
 )
 
+export const DotIcon = ({ className = "", size = 16 }: IconProps) => (
+  <svg 
+    width={size} 
+    height={size} 
+    viewBox="0 0 16 16" 
+    fill="none"
+    className={className}
+  >
+    <circle cx="8" cy="8" r="3" fill="#ADADAD"/>
+  </svg>
+)
+
 export const ClockIcon = ({ className = "", size = 16 }: IconProps) => (
   <svg 
     width={size} 

@@ -20,7 +20,7 @@ import {
   PulseyAvatar,
   SidebarIcon,
   FocusModeIcon,
-  CircleDashedIcon
+  DotIcon
 } from '@/components/icons/PulseIcons'
 import { IconButton } from '@/components/ui/IconButton'
 import type { BulletItem as BulletItemType } from '@/lib/types'
@@ -685,6 +685,7 @@ export function TimelineRedesign() {
                   {/* Active items */}
                   {day.items.filter(item => item.status !== 'cancelled').map((item, index) => {
                     const activeItems = day.items.filter(i => i.status !== 'cancelled')
+                    // Last item should NOT have a line if there are no cancelled items after it
                     const isLast = index === activeItems.length - 1 && !day.items.some(i => i.status === 'cancelled')
                     
                     return (
@@ -694,37 +695,20 @@ export function TimelineRedesign() {
                           isLast={isLast}
                           onStateChange={(newState) => handleStateChange(item, newState)}
                         />
-                        {/* Vertical line - connects to next item or cancelled section */}
-                        {!isLast && (
-                          <div 
-                            className="absolute left-[10px] top-[20px] w-[1px] bg-[rgba(0,0,0,0.08)]"
-                            style={{ height: 'calc(100% - 0px)' }}
-                          />
-                        )}
                       </div>
                     )
                   })}
                   
                   {/* Cancelled items as a single entry */}
                   {day.items.filter(item => item.status === 'cancelled').length > 0 && (
-                    <div className="relative">
-                      {/* Line from last active item to cancelled */}
-                      {day.items.filter(i => i.status !== 'cancelled').length > 0 && (
-                        <div 
-                          className="absolute left-[10px] -top-[1px] w-[1px] h-[21px] bg-[rgba(0,0,0,0.08)]"
-                        />
-                      )}
-                      <div className="flex gap-4 items-start w-[720px] min-h-10">
-                        <div className="flex flex-col items-center min-h-10 w-5">
-                          <div className="w-5 h-5 flex items-center justify-center">
-                            <CircleDashedIcon size={20} />
-                          </div>
-                        </div>
-                        <div className="flex-1 pb-2 pt-0">
-                          <span className="text-base leading-5 font-normal text-[rgba(0,0,0,0.2)] tracking-[-0.192px]">
-                            {day.items.filter(item => item.status === 'cancelled').length} cancelled
-                          </span>
-                        </div>
+                    <div className="flex gap-4 items-start w-[720px]">
+                      <div className="w-5 h-5 flex items-center justify-center">
+                        <DotIcon size={16} />
+                      </div>
+                      <div className="h-5 flex items-center">
+                        <span className="text-base leading-5 font-normal text-[#ADADAD] tracking-[-0.192px]">
+                          {day.items.filter(item => item.status === 'cancelled').length} cancelled
+                        </span>
                       </div>
                     </div>
                   )}

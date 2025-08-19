@@ -48,9 +48,9 @@ export function BulletItemWithMenu({ item, isLast = false, onStateChange }: Bull
   }
 
   return (
-    <div className="flex gap-4 items-start w-[720px]">
+    <div className="flex gap-4 items-start w-[720px] relative">
       {/* Left column with icon and line */}
-      <div className="flex flex-col items-center min-h-10 w-5 relative">
+      <div className="flex flex-col items-center min-h-10 w-5">
         {/* Icon with menu */}
         <BulletItemMenu
           onStateChange={handleStateChange}
