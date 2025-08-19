@@ -6,6 +6,7 @@ import { PulseyAvatar } from '@/components/icons/PulseIcons'
 interface PulseyInputDetectionProps {
   text: string
   onPreview?: () => void
+  onDetectionChange?: (hasDetection: boolean, itemCount?: number) => void
 }
 
 interface Detection {
@@ -13,7 +14,7 @@ interface Detection {
   message: string
 }
 
-export function PulseyInputDetection({ text, onPreview }: PulseyInputDetectionProps) {
+export function PulseyInputDetection({ text, onPreview, onDetectionChange }: PulseyInputDetectionProps) {
   const [detection, setDetection] = useState<Detection | null>(null)
   const [isAnalyzing, setIsAnalyzing] = useState(false)
 
@@ -22,6 +23,7 @@ export function PulseyInputDetection({ text, onPreview }: PulseyInputDetectionPr
       // Don't analyze short text
       if (text.length < 30) {
         setDetection(null)
+        onDetectionChange?.(false)
         return
       }
 
@@ -44,8 +46,10 @@ export function PulseyInputDetection({ text, onPreview }: PulseyInputDetectionPr
               itemCount: data.itemCount,
               message: getDetectionMessage(data.itemCount)
             })
+            onDetectionChange?.(true, data.itemCount)
           } else {
             setDetection(null)
+            onDetectionChange?.(false)
           }
         } else {
           // Fallback to simple heuristics if AI fails
@@ -59,13 +63,16 @@ export function PulseyInputDetection({ text, onPreview }: PulseyInputDetectionPr
               itemCount: estimatedCount,
               message: getDetectionMessage(estimatedCount)
             })
+            onDetectionChange?.(true, estimatedCount)
           } else {
             setDetection(null)
+            onDetectionChange?.(false)
           }
         }
       } catch (error) {
         console.error('Detection failed:', error)
         setDetection(null)
+        onDetectionChange?.(false)
       }
       
       setIsAnalyzing(false)
@@ -114,7 +121,7 @@ export function PulseyInputDetection({ text, onPreview }: PulseyInputDetectionPr
               </svg>
             </kbd>
             <kbd className="inline-flex items-center justify-center h-4 min-w-[16px] px-0.5 rounded-[5px] bg-[#E8E8E8] text-[11px] font-semibold text-[#666666]">
-              ↵
+              P
             </kbd>
           </div>
           <span className="text-[12px] font-medium">Preview</span>

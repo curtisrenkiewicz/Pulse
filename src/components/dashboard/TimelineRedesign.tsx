@@ -45,6 +45,7 @@ export function TimelineRedesign() {
   const [showTodayButton, setShowTodayButton] = useState(false)
   const [inputText, setInputText] = useState('')
   const [showPreview, setShowPreview] = useState(false)
+  const [hasDetection, setHasDetection] = useState(false)
   const scrollContainerRef = useRef<HTMLDivElement>(null)
   const bottomRef = useRef<HTMLDivElement>(null)
   const todayRef = useRef<HTMLDivElement>(null)
@@ -270,6 +271,79 @@ export function TimelineRedesign() {
     })
   }
 
+  // Handle pre-parsed and categorized items from the preview modal
+  const handleParsedItemAdded = async (text: string, bulletType: BulletItemType['bullet_type'], symbol: string) => {
+    if (!text.trim() || !user || !userTimezone) return
+
+    const today = getTodayInUserTimezone(userTimezone)
+    
+    // Get or create today's daily log
+    let { data: dailyLog } = await supabase
+      .from('daily_logs')
+      .select('id')
+      .eq('user_id', user.id)
+      .eq('date', today)
+      .single()
+
+    let logId = dailyLog?.id
+
+    if (!logId) {
+      const { data: newLog, error: newLogError } = await supabase
+        .from('daily_logs')
+        .insert({ user_id: user.id, date: today })
+        .select('id')
+        .single()
+      
+      if (newLogError) {
+        console.error('Failed to create daily log:', newLogError)
+        return
+      }
+      logId = newLog.id
+    }
+
+    // Create the bullet item with pre-determined type
+    const { data: newItem, error: itemError } = await supabase
+      .from('bullet_items')
+      .insert({
+        daily_log_id: logId,
+        user_id: user.id,
+        text,
+        bullet_type: bulletType,
+        symbol,
+        status: 'incomplete',
+        created_at: new Date().toISOString()
+      })
+      .select()
+      .single()
+
+    if (itemError) {
+      console.error('Failed to create parsed item:', itemError)
+      return
+    }
+
+    // Add to UI
+    setDays(prev => {
+      const newDays = [...prev]
+      let todayIndex = newDays.findIndex(d => d.isToday)
+      
+      if (todayIndex === -1) {
+        const today = getTodayInUserTimezone(userTimezone)
+        newDays.push({
+          date: today,
+          displayDate: 'Today',
+          items: [newItem],
+          isToday: true
+        })
+      } else {
+        const exists = newDays[todayIndex].items.some(i => i.id === newItem.id)
+        if (!exists) {
+          newDays[todayIndex].items.push(newItem)
+        }
+      }
+      return newDays
+    })
+  }
+
   const handleItemUpdated = (itemId: string, updates: Partial<BulletItemType>) => {
     setDays(prev => {
       const newDays = [...prev]
@@ -383,8 +457,8 @@ export function TimelineRedesign() {
         }, 50) // Reduced from 100ms to 50ms
       }
       
-      // Preview multi-item parsing with Cmd+Enter
-      if (e.key === 'Enter' && e.metaKey && !e.shiftKey && !isTyping && inputText) {
+      // Preview multi-item parsing with Cmd+P
+      if (e.key === 'p' && e.metaKey && !e.shiftKey && !isTyping && inputText) {
         e.preventDefault()
         setShowPreview(true)
       }
@@ -699,15 +773,45 @@ export function TimelineRedesign() {
             <PulseyInputDetection 
               text={inputText}
               onPreview={() => setShowPreview(true)}
+              onDetectionChange={(hasDetection) => setHasDetection(hasDetection)}
             />
           )}
           
           {/* Input field */}
           <VanishingInput 
             ref={inputRef}
-            onSubmit={(text) => {
-              handleItemAdded(text)
+            onSubmit={async (text) => {
+              // If detection is active, parse and submit multiple items
+              if (hasDetection) {
+                try {
+                  // Parse the text into multiple items
+                  const response = await fetch('/api/ai/parse-multi-items', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ text, userId: user?.id })
+                  })
+                  
+                  if (response.ok) {
+                    const { items } = await response.json()
+                    // Add each parsed item with its determined type
+                    for (const item of items) {
+                      await handleParsedItemAdded(item.text, item.bullet_type, item.symbol)
+                    }
+                  } else {
+                    // Fallback to single item if parsing fails
+                    await handleItemAdded(text)
+                  }
+                } catch (error) {
+                  console.error('Failed to parse multi-items:', error)
+                  // Fallback to single item
+                  await handleItemAdded(text)
+                }
+              } else {
+                // Single item submission
+                await handleItemAdded(text)
+              }
               setInputText('') // Clear detection UI after submission
+              setHasDetection(false) // Reset detection state
             }}
             onTextChange={setInputText}
             placeholder="What's on your mind?"
@@ -797,9 +901,9 @@ export function TimelineRedesign() {
         isOpen={showPreview}
         onClose={() => setShowPreview(false)}
         onConfirm={async (items) => {
-          // Add all items to the timeline
+          // Add all items to the timeline with their pre-determined types
           for (const item of items) {
-            await handleItemAdded(item.text)
+            await handleParsedItemAdded(item.text, item.bullet_type, item.symbol)
           }
           // Clear the input and detection UI
           setInputText('')
