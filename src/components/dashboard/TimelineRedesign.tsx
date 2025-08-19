@@ -269,10 +269,15 @@ export function TimelineRedesign() {
       }
       return newDays
     })
+    
+    // Scroll to bottom after adding item
+    setTimeout(() => {
+      scrollToToday()
+    }, 100)
   }
 
   // Handle pre-parsed and categorized items from the preview modal
-  const handleParsedItemAdded = async (text: string, bulletType: BulletItemType['bullet_type'], symbol: string) => {
+  const handleParsedItemAdded = async (text: string, bulletType: BulletItemType['bullet_type'], symbol: string, skipScroll?: boolean) => {
     if (!text.trim() || !user || !userTimezone) return
 
     const today = getTodayInUserTimezone(userTimezone)
@@ -342,6 +347,13 @@ export function TimelineRedesign() {
       }
       return newDays
     })
+    
+    // Scroll to bottom after adding item (unless skipped for batch operations)
+    if (!skipScroll) {
+      setTimeout(() => {
+        scrollToToday()
+      }, 100)
+    }
   }
 
   const handleItemUpdated = (itemId: string, updates: Partial<BulletItemType>) => {
@@ -777,9 +789,11 @@ export function TimelineRedesign() {
                   
                   if (response.ok) {
                     const { items } = await response.json()
-                    // Add each parsed item with its determined type
-                    for (const item of items) {
-                      await handleParsedItemAdded(item.text, item.bullet_type, item.symbol)
+                    // Add each parsed item with its determined type (skip scroll for all but last)
+                    for (let i = 0; i < items.length; i++) {
+                      const item = items[i]
+                      const isLast = i === items.length - 1
+                      await handleParsedItemAdded(item.text, item.bullet_type, item.symbol, !isLast)
                     }
                   } else {
                     // Fallback to single item if parsing fails
@@ -885,9 +899,11 @@ export function TimelineRedesign() {
         isOpen={showPreview}
         onClose={() => setShowPreview(false)}
         onConfirm={async (items) => {
-          // Add all items to the timeline with their pre-determined types
-          for (const item of items) {
-            await handleParsedItemAdded(item.text, item.bullet_type, item.symbol)
+          // Add all items to the timeline with their pre-determined types (skip scroll for all but last)
+          for (let i = 0; i < items.length; i++) {
+            const item = items[i]
+            const isLast = i === items.length - 1
+            await handleParsedItemAdded(item.text, item.bullet_type, item.symbol, !isLast)
           }
           // Clear the input and detection UI
           setInputText('')
