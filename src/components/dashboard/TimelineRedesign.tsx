@@ -564,12 +564,13 @@ export function TimelineRedesign() {
         loadMoreDays()
       }
       
-      // Check if today is in view
+      // Check if ANY part of today section is visible (accounting for input area)
       if (todayRef.current) {
         const todayRect = todayRef.current.getBoundingClientRect()
         const containerRect = scrollContainer.getBoundingClientRect()
-        const isInView = todayRect.top >= containerRect.top && todayRect.bottom <= containerRect.bottom
-        setShowTodayButton(!isInView)
+        // Check if there's any intersection between today section and effective viewport (minus ~120px for input area)
+        const isAnyPartVisible = todayRect.bottom > containerRect.top && todayRect.top < containerRect.bottom - 120
+        setShowTodayButton(!isAnyPartVisible)
       }
     }
 
