@@ -596,18 +596,14 @@ export function TimelineRedesign() {
                   
                   {/* Cancelled items as a single entry */}
                   {day.items.filter(item => item.status === 'cancelled').length > 0 && (
-                    <div className="relative">
-                      <div className="flex gap-4 items-start w-[720px] min-h-10">
-                        <div className="flex flex-col items-center min-h-10 w-5">
-                          <div className="w-5 h-5 flex items-center justify-center">
-                            <DotIcon size={16} />
-                          </div>
-                        </div>
-                        <div className="flex-1 pb-2 pt-0">
-                          <span className="text-base leading-5 font-normal text-[rgba(0,0,0,0.2)] tracking-[-0.192px]">
-                            {day.items.filter(item => item.status === 'cancelled').length} cancelled
-                          </span>
-                        </div>
+                    <div className="flex gap-4 items-start w-[720px]">
+                      <div className="w-5 h-5 flex items-center justify-center">
+                        <DotIcon size={16} />
+                      </div>
+                      <div className="h-5 flex items-center">
+                        <span className="text-base leading-5 font-normal text-[#ADADAD] tracking-[-0.192px]">
+                          {day.items.filter(item => item.status === 'cancelled').length} cancelled
+                        </span>
                       </div>
                     </div>
                   )}
