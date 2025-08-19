@@ -5,6 +5,7 @@ import { useCallback, useEffect, useRef, useState, forwardRef, useImperativeHand
 interface VanishingInputProps {
   onSubmit?: (text: string) => void
   placeholder?: string
+  onTextChange?: (text: string) => void
 }
 
 export interface VanishingInputRef {
@@ -12,7 +13,7 @@ export interface VanishingInputRef {
 }
 
 export const VanishingInput = forwardRef<VanishingInputRef, VanishingInputProps>(
-  ({ onSubmit, placeholder = "What's on your mind?" }, ref) => {
+  ({ onSubmit, placeholder = "What's on your mind?", onTextChange }, ref) => {
   const canvasRef = useRef<HTMLCanvasElement>(null)
   const newDataRef = useRef<any[]>([])
   const inputRef = useRef<HTMLTextAreaElement>(null)
@@ -227,6 +228,7 @@ export const VanishingInput = forwardRef<VanishingInputRef, VanishingInputProps>
             onChange={(e) => {
               if (!animating) {
                 setValue(e.target.value)
+                onTextChange?.(e.target.value)
               }
             }}
             onKeyDown={handleKeyDown}

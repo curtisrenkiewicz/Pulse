@@ -8,6 +8,8 @@ import { TimezoneDetector } from '@/components/TimezoneDetector'
 import { VanishingInput, type VanishingInputRef } from '@/components/bullet-journal/VanishingInput'
 import { BulletItemWithMenu } from '@/components/bullet-journal/BulletItemWithMenu'
 import { FocusModeHeader } from '@/components/dashboard/FocusModeHeader'
+import { PulseyInputDetection } from '@/components/dashboard/PulseyInputDetection'
+import { PulseyPreviewModal } from '@/components/dashboard/PulseyPreviewModal'
 import { getDefaultSymbol, getSymbolForStatus } from '@/lib/bulletSymbols'
 import { 
   ClockIcon, 
@@ -41,6 +43,8 @@ export function TimelineRedesign() {
   const [firstEntryDate, setFirstEntryDate] = useState<string | null>(null)
   const [reachedBeginning, setReachedBeginning] = useState(false)
   const [showTodayButton, setShowTodayButton] = useState(false)
+  const [inputText, setInputText] = useState('')
+  const [showPreview, setShowPreview] = useState(false)
   const scrollContainerRef = useRef<HTMLDivElement>(null)
   const bottomRef = useRef<HTMLDivElement>(null)
   const todayRef = useRef<HTMLDivElement>(null)
@@ -357,10 +361,16 @@ export function TimelineRedesign() {
           setShowChatSidebar(true) // Show chat sidebar when exiting focus mode
         }, 50) // Reduced from 100ms to 50ms
       }
+      
+      // Preview multi-item parsing with Cmd+Shift+R
+      if (e.key === 'r' && e.metaKey && e.shiftKey && !isTyping && inputText) {
+        e.preventDefault()
+        setShowPreview(true)
+      }
     }
     window.addEventListener('keydown', handleKeyPress)
     return () => window.removeEventListener('keydown', handleKeyPress)
-  }, [focusMode])
+  }, [focusMode, inputText])
 
   // Load more historical data when scrolling near top
   const loadMoreDays = async () => {
@@ -663,10 +673,19 @@ export function TimelineRedesign() {
             </svg>
           </button>
           
+          {/* Pulsey detection UI - shows above input when multi-item detected */}
+          {inputText && (
+            <PulseyInputDetection 
+              text={inputText}
+              onPreview={() => setShowPreview(true)}
+            />
+          )}
+          
           {/* Input field */}
           <VanishingInput 
             ref={inputRef}
             onSubmit={handleItemAdded}
+            onTextChange={setInputText}
             placeholder="What's on your mind?"
           />
         </div>
@@ -747,6 +766,22 @@ export function TimelineRedesign() {
       >
         <PulseyAvatar size={40} />
       </button>
+      
+      {/* Preview Modal */}
+      <PulseyPreviewModal
+        text={inputText}
+        isOpen={showPreview}
+        onClose={() => setShowPreview(false)}
+        onConfirm={async (items) => {
+          // Add all items to the timeline
+          for (const item of items) {
+            await handleItemAdded(item.text)
+          }
+          // Clear the input
+          setInputText('')
+          inputRef.current?.focus()
+        }}
+      />
     </div>
   )
 }
