@@ -45,8 +45,8 @@ export function PulseyInputDetection({ text, onPreview }: PulseyInputDetectionPr
       setIsAnalyzing(false)
     }
 
-    // Debounce the analysis
-    const timeout = setTimeout(analyzeText, 500)
+    // Debounce the analysis - reduced for faster feedback
+    const timeout = setTimeout(analyzeText, 200)
     return () => clearTimeout(timeout)
   }, [text])
 
@@ -77,7 +77,7 @@ export function PulseyInputDetection({ text, onPreview }: PulseyInputDetectionPr
           className="text-[#999] hover:text-[#666] text-[12px] flex items-center gap-1 transition-colors"
         >
           <kbd className="px-1 py-0.5 bg-[#f0f0f0] rounded text-[10px] font-medium">
-            ⌘⇧R
+            ⌘↵
           </kbd>
           <span>Preview</span>
         </button>

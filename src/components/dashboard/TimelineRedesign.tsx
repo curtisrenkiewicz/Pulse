@@ -209,6 +209,7 @@ export function TimelineRedesign() {
       .from('bullet_items')
       .insert({
         daily_log_id: logId,
+        user_id: user.id,
         text,
         bullet_type: category,
         symbol,
@@ -362,8 +363,8 @@ export function TimelineRedesign() {
         }, 50) // Reduced from 100ms to 50ms
       }
       
-      // Preview multi-item parsing with Cmd+Shift+R
-      if (e.key === 'r' && e.metaKey && e.shiftKey && !isTyping && inputText) {
+      // Preview multi-item parsing with Cmd+Enter
+      if (e.key === 'Enter' && e.metaKey && !e.shiftKey && !isTyping && inputText) {
         e.preventDefault()
         setShowPreview(true)
       }
@@ -684,7 +685,10 @@ export function TimelineRedesign() {
           {/* Input field */}
           <VanishingInput 
             ref={inputRef}
-            onSubmit={handleItemAdded}
+            onSubmit={(text) => {
+              handleItemAdded(text)
+              setInputText('') // Clear detection UI after submission
+            }}
             onTextChange={setInputText}
             placeholder="What's on your mind?"
           />
@@ -777,8 +781,9 @@ export function TimelineRedesign() {
           for (const item of items) {
             await handleItemAdded(item.text)
           }
-          // Clear the input
+          // Clear the input and detection UI
           setInputText('')
+          inputRef.current?.clear()
           inputRef.current?.focus()
         }}
       />

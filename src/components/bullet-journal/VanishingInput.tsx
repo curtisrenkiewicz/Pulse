@@ -10,6 +10,7 @@ interface VanishingInputProps {
 
 export interface VanishingInputRef {
   focus: () => void
+  clear: () => void
 }
 
 export const VanishingInput = forwardRef<VanishingInputRef, VanishingInputProps>(
@@ -20,10 +21,14 @@ export const VanishingInput = forwardRef<VanishingInputRef, VanishingInputProps>
   const [value, setValue] = useState('')
   const [animating, setAnimating] = useState(false)
   
-  // Expose focus method to parent
+  // Expose focus and clear methods to parent
   useImperativeHandle(ref, () => ({
     focus: () => {
       inputRef.current?.focus()
+    },
+    clear: () => {
+      setValue('')
+      onTextChange?.('')
     }
   }))
 
@@ -108,6 +113,13 @@ export const VanishingInput = forwardRef<VanishingInputRef, VanishingInputProps>
   }, [])
 
   const animate = (start: number, textToSubmit: string) => {
+    // Calculate animation speed based on text length
+    // Longer text = faster animation
+    const textLength = textToSubmit.length
+    const baseSpeed = 8
+    const speedMultiplier = Math.min(Math.max(textLength / 50, 1), 4) // Between 1x and 4x speed
+    const animationSpeed = baseSpeed * speedMultiplier
+    
     const animateFrame = (pos: number) => {
       requestAnimationFrame(() => {
         const newArr = []
@@ -148,8 +160,8 @@ export const VanishingInput = forwardRef<VanishingInputRef, VanishingInputProps>
           })
         }
         if (newDataRef.current.length > 0) {
-          // Send: sweep right to left
-          const nextPos = pos + 8
+          // Send: sweep right to left with dynamic speed
+          const nextPos = pos + animationSpeed
           animateFrame(nextPos)
         } else {
           // Now we use the captured text value
