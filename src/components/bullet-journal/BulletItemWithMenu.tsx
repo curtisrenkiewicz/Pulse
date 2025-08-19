@@ -49,7 +49,7 @@ export function BulletItemWithMenu({ item, isLast = false, onStateChange }: Bull
 
   return (
     <div className="flex gap-4 items-start w-[720px] relative">
-      {/* Left column with icon and line */}
+      {/* Left column with icon */}
       <div className="flex flex-col items-center min-h-10 w-5">
         {/* Icon with menu */}
         <BulletItemMenu
@@ -61,14 +61,20 @@ export function BulletItemWithMenu({ item, isLast = false, onStateChange }: Bull
             {getIconForItem(item)}
           </button>
         </BulletItemMenu>
-        
-        {/* Connecting line */}
-        {!isLast && (
-          <div className="flex-1 w-full flex items-center justify-center min-h-4">
-            <div className="w-[1.5px] h-full bg-[rgba(0,0,0,0.12)]" />
-          </div>
-        )}
       </div>
+      
+      {/* Connecting line - positioned absolutely to match content height */}
+      {!isLast && (
+        <div 
+          className="absolute left-[10px]" 
+          style={{ 
+            width: '1.5px', 
+            top: '24px', // 20px icon height + 4px gap
+            bottom: '0px',
+            backgroundColor: 'rgba(0, 0, 0, 0.12)'
+          }} 
+        />
+      )}
       
       {/* Right column - text content */}
       <div className="flex-1 pb-5 pt-0">
