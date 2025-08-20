@@ -1,7 +1,7 @@
 'use client'
 
 import { useState } from 'react'
-import { VanishInputAceternity } from '@/components/demo/VanishInputAceternity'
+import { VanishInputAceternity } from './VanishInputAceternity'
 
 export default function VanishDemo() {
   const [isDarkMode, setIsDarkMode] = useState(true)
