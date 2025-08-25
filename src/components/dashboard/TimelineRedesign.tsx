@@ -90,6 +90,7 @@ export function TimelineRedesign({ user: propsUser, userTimezone: propsTimezone 
   // Load multiple days of bullet items
   useEffect(() => {
     console.log('Timeline useEffect - user:', user?.id, 'timezone:', userTimezone)
+    // Wait for firstEntryDate to be fetched before loading timeline
     if (!user || !userTimezone) return
 
     const loadTimelineItems = async () => {
@@ -141,6 +142,7 @@ export function TimelineRedesign({ user: propsUser, userTimezone: propsTimezone 
       const today = new Date()
       const daysToLoad = focusMode ? 1 : 14 // Load 14 days instead of 3
       const dayPromises = []
+      let hitBoundary = false
       console.log('Starting to build queries for', daysToLoad, 'days')
 
       for (let i = 0; i < daysToLoad; i++) {
@@ -148,6 +150,13 @@ export function TimelineRedesign({ user: propsUser, userTimezone: propsTimezone 
         date.setDate(date.getDate() - i)
         const dateStr = getUserDateString(date, userTimezone)
         console.log(`Day ${i}: querying for date ${dateStr}`)
+        
+        // Skip days before firstEntryDate (same check as infinite scroll)
+        if (firstEntryDate && dateStr < firstEntryDate) {
+          console.log(`Skipping ${dateStr} as it's before first entry date ${firstEntryDate}`)
+          hitBoundary = true
+          continue
+        }
         
         dayPromises.push(
           supabase
@@ -230,10 +239,15 @@ export function TimelineRedesign({ user: propsUser, userTimezone: propsTimezone 
       if (reversedResults.length > 0) {
         setOldestLoadedDate(reversedResults[0].date)
       }
+      
+      // If we hit the boundary during initial load, mark as reached beginning
+      if (hitBoundary) {
+        setReachedBeginning(true)
+      }
     }
 
     loadTimelineItems()
-  }, [user, userTimezone, focusMode])
+  }, [user, userTimezone, focusMode, firstEntryDate])
   
   // Scroll to today when exiting focus mode
   useEffect(() => {
