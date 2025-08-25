@@ -20,7 +20,8 @@ import {
   PulseyAvatar,
   SidebarIcon,
   FocusModeIcon,
-  DotIcon
+  DotIcon,
+  SignatureIcon
 } from '@/components/icons/PulseIcons'
 import { IconButton } from '@/components/ui/IconButton'
 import type { BulletItem as BulletItemType } from '@/lib/types'
@@ -820,7 +821,9 @@ export function TimelineRedesign({ user: propsUser, userTimezone: propsTimezone 
             {!focusMode && days.length > 1 && reachedBeginning && firstEntryDate && (
               <div className="mb-12 text-center">
                 <div className="inline-block">
-                  <div className="h-[1px] bg-[rgba(0,0,0,0.08)] w-32 mb-6"></div>
+                  <div className="flex justify-center mb-4">
+                    <SignatureIcon className="text-[rgba(0,0,0,0.32)]" size={36} />
+                  </div>
                   <p className="text-base text-[rgba(0,0,0,0.44)] mb-2">
                     This is where your journey began
                   </p>
