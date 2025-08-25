@@ -62,6 +62,8 @@ export function TimelineRedesign({ user: propsUser, userTimezone: propsTimezone 
   const bottomRef = useRef<HTMLDivElement>(null)
   const todayRef = useRef<HTMLDivElement>(null)
   const inputRef = useRef<VanishingInputRef>(null)
+  const journeyBeganRef = useRef<HTMLDivElement>(null)
+  const [journeyAnimated, setJourneyAnimated] = useState(false)
 
   // Fetch the user's first journal entry date
   useEffect(() => {
@@ -271,6 +273,30 @@ export function TimelineRedesign({ user: propsUser, userTimezone: propsTimezone 
       }, 150) // Reduced from 300ms to 150ms
     }
   }, [focusMode, loading])
+
+  // Trigger animation when journey began section comes into view
+  useEffect(() => {
+    if (!journeyBeganRef.current || journeyAnimated) return
+
+    const observer = new IntersectionObserver(
+      (entries) => {
+        entries.forEach((entry) => {
+          if (entry.isIntersecting && !journeyAnimated) {
+            setJourneyAnimated(true)
+          }
+        })
+      },
+      { threshold: 0.5 } // Trigger when 50% visible
+    )
+
+    observer.observe(journeyBeganRef.current)
+
+    return () => {
+      if (journeyBeganRef.current) {
+        observer.unobserve(journeyBeganRef.current)
+      }
+    }
+  }, [reachedBeginning, journeyAnimated])
 
   const formatDisplayDate = (date: Date, isToday: boolean) => {
     if (isToday) return 'Today'
@@ -833,11 +859,14 @@ export function TimelineRedesign({ user: propsUser, userTimezone: propsTimezone 
             
             {/* Beginning of journey message - only show when not in focus mode and showing multiple days */}
             {!focusMode && days.length > 1 && reachedBeginning && firstEntryDate && (
-              <div className="flex flex-col items-center gap-4 pb-10">
+              <div ref={journeyBeganRef} className="flex flex-col items-center gap-4 pb-10">
                 <div className="relative w-9 h-9">
-                  <SignatureIcon className="text-[rgba(0,0,0,0.32)]" size={36} />
+                  <SignatureIcon 
+                    className={`text-[rgba(0,0,0,0.32)] ${journeyAnimated ? 'animate-draw' : ''}`} 
+                    size={36} 
+                  />
                 </div>
-                <div className="flex flex-col items-center gap-1">
+                <div className={`flex flex-col items-center gap-1 ${journeyAnimated ? 'animate-fade-in-delayed' : 'opacity-0'}`}>
                   <p className="text-xs font-medium text-[rgba(0,0,0,0.32)] tracking-[0.36px] leading-[17px]">
                     {formatDatePart(firstEntryDate)}
                   </p>
