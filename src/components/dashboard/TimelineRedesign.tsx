@@ -1043,12 +1043,12 @@ export function TimelineRedesign({ user: propsUser, userTimezone: propsTimezone 
 
       {/* Pulsey Chat Sidebar with slide transition */}
       <div 
-        className={`bg-[#fcfcfc] border-l border-[rgba(0,0,0,0.07)] w-72 flex flex-col transition-all duration-300 ease-in-out ${
+        className={`bg-[#fcfcfc] border-l border-[rgba(0,0,0,0.07)] w-[344px] flex flex-col transition-all duration-300 ease-in-out ${
           showChatSidebar ? 'translate-x-0' : 'translate-x-full'
         }`}
         style={{ 
           position: 'relative',
-          marginRight: showChatSidebar ? '0' : '-288px' // -288px is negative width of sidebar
+          marginRight: showChatSidebar ? '0' : '-344px' // -344px is negative width of sidebar
         }}>
         {/* Header - 40px height to match main header */}
         <div className="h-10 flex items-center justify-between px-2 border-b border-[rgba(0,0,0,0.07)]">
