@@ -46,7 +46,9 @@ export function TimelineRedesign() {
   const [inputText, setInputText] = useState('')
   const [showPreview, setShowPreview] = useState(false)
   const [hasDetection, setHasDetection] = useState(false)
+  const [showMenu, setShowMenu] = useState(false)
   const scrollContainerRef = useRef<HTMLDivElement>(null)
+  const menuRef = useRef<HTMLDivElement>(null)
   const bottomRef = useRef<HTMLDivElement>(null)
   const todayRef = useRef<HTMLDivElement>(null)
   const inputRef = useRef<VanishingInputRef>(null)
@@ -80,10 +82,11 @@ export function TimelineRedesign() {
     if (!user || !userTimezone) return
 
     const loadTimelineItems = async () => {
+      // Set loading true at the start
+      setLoading(true)
+      
       // Add a small delay when switching modes to allow animations to start
-      if (loading) {
-        await new Promise(resolve => setTimeout(resolve, 75)) // Reduced from 150ms to 75ms
-      }
+      await new Promise(resolve => setTimeout(resolve, 75)) // Reduced from 150ms to 75ms
       
       const today = new Date()
       const daysToLoad = focusMode ? 1 : 14 // Load 14 days instead of 3
@@ -106,6 +109,9 @@ export function TimelineRedesign() {
             .eq('date', dateStr)
             .maybeSingle()
             .then(({ data, error }) => {
+              if (error) {
+                console.error('Error loading day:', error)
+              }
               // Always create an entry for each day, even if empty
               return {
                 date: dateStr,
@@ -582,6 +588,27 @@ export function TimelineRedesign() {
     }
   }, [loadingMore, oldestLoadedDate, focusMode, reachedBeginning, userTimezone])
   
+  // Close menu when clicking outside
+  useEffect(() => {
+    const handleClickOutside = (event: MouseEvent) => {
+      if (menuRef.current && !menuRef.current.contains(event.target as Node)) {
+        // Also check if the click is on the menu button itself
+        const menuButton = document.querySelector('[data-menu-button]')
+        if (menuButton && !menuButton.contains(event.target as Node)) {
+          setShowMenu(false)
+        }
+      }
+    }
+
+    if (showMenu) {
+      document.addEventListener('mousedown', handleClickOutside)
+    }
+
+    return () => {
+      document.removeEventListener('mousedown', handleClickOutside)
+    }
+  }, [showMenu])
+  
   // Scroll to today function
   const scrollToToday = () => {
     if (scrollContainerRef.current) {
@@ -605,10 +632,66 @@ export function TimelineRedesign() {
           }} />
         ) : (
           <div className="sticky top-0 h-10 z-20 flex items-center justify-between px-3">
-            <div className="flex items-center gap-3">
-              <IconButton size={20}>
-                <SidebarIcon className="text-[#ADADAD]" size={20} />
+            <div className="flex items-center gap-3 relative">
+              <IconButton 
+                size={20}
+                onClick={() => setShowMenu(!showMenu)}
+                className={showMenu ? 'bg-black/5' : ''}
+                data-menu-button
+              >
+                <svg 
+                  width={20} 
+                  height={20} 
+                  viewBox="0 0 20 20" 
+                  fill="none" 
+                  className="text-[#ADADAD]"
+                >
+                  <path 
+                    d="M2.29297 6.45801C2.29297 5.0773 3.41226 3.95801 4.79297 3.95801H15.2096C16.5904 3.95801 17.7096 5.0773 17.7096 6.45801V13.5413C17.7096 14.9221 16.5904 16.0413 15.2096 16.0413H4.79297C3.41226 16.0413 2.29297 14.9221 2.29297 13.5413V6.45801Z" 
+                    stroke="currentColor" 
+                    strokeWidth="1.5" 
+                    strokeLinejoin="round"
+                  />
+                  <path 
+                    d={showMenu 
+                      ? "M6.875 4.16602V9.99935V15.8327" 
+                      : "M5.875 7.16699V10.0003V12.8337"
+                    }
+                    stroke="currentColor" 
+                    strokeWidth="1.5" 
+                    strokeLinecap="round" 
+                    strokeLinejoin="round"
+                    style={{
+                      transition: 'all 0.2s ease-in-out',
+                    }}
+                  />
+                </svg>
               </IconButton>
+              
+              {/* Simple Menu Dropdown */}
+              {showMenu && (
+                <div 
+                  ref={menuRef}
+                  className="absolute top-8 left-0 mt-1 bg-white border border-[rgba(0,0,0,0.07)] rounded-lg shadow-lg py-1 min-w-[160px]"
+                  style={{
+                    boxShadow: '0px 4px 12px rgba(0, 0, 0, 0.08)'
+                  }}
+                >
+                  <button
+                    onClick={() => {
+                      signOut()
+                      setShowMenu(false)
+                    }}
+                    className="w-full px-4 py-2 text-left text-sm text-[#666666] hover:bg-gray-50 transition-colors"
+                    style={{
+                      fontFamily: 'Inter, system-ui, -apple-system, sans-serif',
+                      fontWeight: 500
+                    }}
+                  >
+                    Sign Out
+                  </button>
+                </div>
+              )}
             </div>
             <IconButton 
               size={20} 

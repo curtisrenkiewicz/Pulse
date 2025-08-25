@@ -103,6 +103,38 @@ collections (
 
 ## Component Architecture
 
+### Component & Animation Patterns
+
+**When to Create Components vs Inline Solutions:**
+
+**Create separate components when:**
+- Animation logic is complex or involves multiple coordinated elements
+- Component is reused in multiple places
+- Need to encapsulate complex state management
+- Business logic is substantial and needs isolation
+
+**Use inline solutions when:**
+- Simple state toggles (like menu open/close)
+- Used in one place only
+- Animation is just CSS transitions
+- Logic is easy to understand at a glance
+
+**Example: Icon Animation Pattern**
+```jsx
+// ✅ GOOD - Simple inline solution for icon state change
+<IconButton onClick={() => setIsOpen(!isOpen)}>
+  <svg>
+    <path 
+      d={isOpen ? "M6.875 4.166..." : "M5.875 7.166..."}
+      style={{ transition: 'all 0.2s ease-in-out' }}
+    />
+  </svg>
+</IconButton>
+
+// ❌ AVOID - Over-engineering simple animations
+<AnimatedIcon isOpen={isOpen} /> // Unnecessary component for simple state
+```
+
 ### Core Components
 ```
 src/

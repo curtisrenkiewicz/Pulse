@@ -2,6 +2,14 @@
 
 ## Project: Pulse - Bullet Journal App
 
+### 📚 Documentation Structure
+Before making changes, consult the appropriate documentation:
+- **DESIGN_SYSTEM.md** - UI components, colors, typography, spacing, icons
+- **TECHNICAL_SPECS.md** - Database schema, API routes, component patterns, architecture decisions
+- **DEVELOPMENT_PLAN.md** - Feature roadmap and implementation phases
+- **PRD.md** - Product requirements and user stories
+- **SESSION_NOTES.md** - Recent development decisions and changes
+
 ### Commit Message Guidelines
 - Do NOT include "🤖 Generated with [Claude Code]" or "Co-Authored-By: Claude" in commit messages
 - Keep commit messages clean and professional

@@ -114,15 +114,12 @@ export function useAuth() {
     }
     
     getInitialSession()
-    
-    return () => {
-      mounted = false
-      clearTimeout(timeoutId)
-    }
 
     // Listen for auth changes
     const { data: { subscription } } = supabase.auth.onAuthStateChange(
       async (event, session) => {
+        if (!mounted) return
+        
         setUser(session?.user ?? null)
         if (session?.user) {
           await ensureUserProfile(session.user.id)
@@ -130,8 +127,12 @@ export function useAuth() {
         setLoading(false)
       }
     )
-
-    return () => subscription.unsubscribe()
+    
+    return () => {
+      mounted = false
+      clearTimeout(timeoutId)
+      subscription.unsubscribe()
+    }
   }, [])
 
   const signUp = async (email: string, password: string) => {
@@ -152,6 +153,10 @@ export function useAuth() {
 
   const signOut = async () => {
     const { error } = await supabase.auth.signOut()
+    if (!error) {
+      // Force a page refresh to clear all state
+      window.location.href = '/'
+    }
     return { error }
   }
 
