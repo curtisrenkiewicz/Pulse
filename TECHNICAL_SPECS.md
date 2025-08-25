@@ -135,6 +135,58 @@ collections (
 <AnimatedIcon isOpen={isOpen} /> // Unnecessary component for simple state
 ```
 
+### Authentication Patterns
+
+**Key Principles:**
+- Keep authentication simple and isolated from other operations
+- Don't add aggressive timeouts that clear user state
+- Profile fetching should never block authentication
+- Always ensure loading states are properly managed
+
+**useAuth Hook Pattern:**
+```jsx
+// ✅ GOOD - Simple, reliable authentication
+useEffect(() => {
+  let mounted = true
+  
+  const initAuth = async () => {
+    try {
+      const { data: { session }, error } = await supabase.auth.getSession()
+      if (!mounted) return
+      
+      setUser(session?.user ?? null)
+      
+      // Profile fetch doesn't block auth
+      if (session?.user) {
+        ensureUserProfile(session.user.id).catch(console.warn)
+      }
+      
+      setLoading(false)
+    } catch (err) {
+      if (mounted) {
+        setUser(null)
+        setLoading(false)
+      }
+    }
+  }
+  
+  initAuth()
+  return () => { mounted = false }
+}, [])
+
+// ❌ AVOID - Aggressive timeouts and dependent operations
+const result = await Promise.race([
+  supabase.auth.getSession(),
+  timeout(10000) // Don't clear user state on slow connections
+])
+```
+
+**Common Pitfalls to Avoid:**
+- Don't make authentication dependent on profile fetch success
+- Don't have multiple code paths where loading might not get set to false
+- Don't create circular dependencies (auth → profile → auth)
+- Don't ignore React Strict Mode double execution in development
+
 ### Core Components
 ```
 src/

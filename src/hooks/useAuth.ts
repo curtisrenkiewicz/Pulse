@@ -38,12 +38,14 @@ export function useAuth() {
       }
 
       if (profile) {
+        console.log('User profile found with timezone:', profile.timezone)
         setUserTimezone(profile.timezone || 'UTC')
         return profile.timezone
       }
 
       // Create profile if it doesn't exist
       const detectedTimezone = detectTimezone()
+      console.log('No profile found, creating with detected timezone:', detectedTimezone)
       const { data: newProfile, error: insertError } = await supabase
         .from('user_profiles')
         .insert({ 
@@ -72,27 +74,17 @@ export function useAuth() {
   }
 
   useEffect(() => {
-    // Prevent multiple simultaneous calls
     let mounted = true
     
-    // Add a timeout fallback
-    const timeoutId = setTimeout(() => {
-      if (mounted) {
-        setUser(null)
-        setLoading(false)
-      }
-    }, 10000)
-    
-    // Try to get session
-    const getInitialSession = async () => {
+    // Get initial session
+    const initAuth = async () => {
       try {
         const { data: { session }, error } = await supabase.auth.getSession()
         
         if (!mounted) return
         
-        clearTimeout(timeoutId)
-        
         if (error) {
+          console.error('Auth error:', error)
           setUser(null)
           setLoading(false)
           return
@@ -101,36 +93,43 @@ export function useAuth() {
         setUser(session?.user ?? null)
         
         if (session?.user) {
-          await ensureUserProfile(session.user.id)
+          // Don't await this - let it run in background
+          ensureUserProfile(session.user.id).catch(err => 
+            console.warn('Profile fetch failed:', err)
+          )
         }
         
         setLoading(false)
-      } catch (error) {
-        if (!mounted) return
-        clearTimeout(timeoutId)
-        setUser(null)
-        setLoading(false)
+      } catch (err) {
+        console.error('Auth init error:', err)
+        if (mounted) {
+          setUser(null)
+          setLoading(false)
+        }
       }
     }
     
-    getInitialSession()
+    initAuth()
 
     // Listen for auth changes
     const { data: { subscription } } = supabase.auth.onAuthStateChange(
       async (event, session) => {
+        console.log('Auth state changed:', event, 'user:', session?.user?.id)
+        
         if (!mounted) return
         
         setUser(session?.user ?? null)
+        
         if (session?.user) {
-          await ensureUserProfile(session.user.id)
+          ensureUserProfile(session.user.id).catch(err => 
+            console.warn('Profile fetch failed:', err)
+          )
         }
-        setLoading(false)
       }
     )
     
     return () => {
       mounted = false
-      clearTimeout(timeoutId)
       subscription.unsubscribe()
     }
   }, [])

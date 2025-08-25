@@ -32,8 +32,17 @@ interface DaySection {
   isToday: boolean
 }
 
-export function TimelineRedesign() {
-  const { user, userTimezone, signOut } = useAuth()
+interface TimelineRedesignProps {
+  user?: any
+  userTimezone?: string
+}
+
+export function TimelineRedesign({ user: propsUser, userTimezone: propsTimezone }: TimelineRedesignProps = {}) {
+  const auth = useAuth()
+  // Use props if provided, otherwise fall back to hook
+  const user = propsUser || auth.user
+  const userTimezone = propsTimezone || auth.userTimezone
+  const { signOut } = auth
   const [days, setDays] = useState<DaySection[]>([])
   const [loading, setLoading] = useState(true)
   const [focusMode, setFocusMode] = useState(false)
@@ -79,11 +88,51 @@ export function TimelineRedesign() {
 
   // Load multiple days of bullet items
   useEffect(() => {
+    console.log('Timeline useEffect - user:', user?.id, 'timezone:', userTimezone)
     if (!user || !userTimezone) return
 
     const loadTimelineItems = async () => {
+      console.log('Loading timeline items for user:', user.id)
       // Set loading true at the start
       setLoading(true)
+      
+      // First, let's test if we can connect to Supabase at all
+      try {
+        console.log('Testing Supabase connection...')
+        console.log('Current user ID:', user.id)
+        
+        // Get the current session to ensure we have auth
+        const { data: { session } } = await supabase.auth.getSession()
+        console.log('Current session:', session ? 'exists' : 'missing')
+        
+        // Try a simpler query first - just count rows without any filters
+        const testQuery = supabase
+          .from('user_profiles')
+          .select('id', { count: 'exact', head: true })
+        
+        // Add timeout to the test query
+        const testPromise = testQuery
+        const timeoutPromise = new Promise((_, reject) => 
+          setTimeout(() => reject(new Error('Test query timeout after 3 seconds')), 3000)
+        )
+        
+        const result = await Promise.race([
+          testPromise,
+          timeoutPromise
+        ]).catch(err => ({ data: null, error: err }))
+        
+        console.log('Supabase test query result:', result)
+        
+        if (result.error) {
+          console.error('Supabase test failed, skipping main queries:', result.error)
+          setLoading(false)
+          return
+        }
+      } catch (testErr) {
+        console.error('Supabase connection test failed:', testErr)
+        setLoading(false)
+        return
+      }
       
       // Add a small delay when switching modes to allow animations to start
       await new Promise(resolve => setTimeout(resolve, 75)) // Reduced from 150ms to 75ms
@@ -91,11 +140,13 @@ export function TimelineRedesign() {
       const today = new Date()
       const daysToLoad = focusMode ? 1 : 14 // Load 14 days instead of 3
       const dayPromises = []
+      console.log('Starting to build queries for', daysToLoad, 'days')
 
       for (let i = 0; i < daysToLoad; i++) {
         const date = new Date(today)
         date.setDate(date.getDate() - i)
         const dateStr = getUserDateString(date, userTimezone)
+        console.log(`Day ${i}: querying for date ${dateStr}`)
         
         dayPromises.push(
           supabase
@@ -109,8 +160,9 @@ export function TimelineRedesign() {
             .eq('date', dateStr)
             .maybeSingle()
             .then(({ data, error }) => {
+              console.log(`Query result for ${dateStr}:`, { data, error })
               if (error) {
-                console.error('Error loading day:', error)
+                console.error('Error loading day:', dateStr, error)
               }
               // Always create an entry for each day, even if empty
               return {
@@ -120,15 +172,58 @@ export function TimelineRedesign() {
                 isToday: i === 0
               }
             })
+            .catch(err => {
+              console.error(`Failed to query ${dateStr}:`, err)
+              // Return empty day on error
+              return {
+                date: dateStr,
+                displayDate: formatDisplayDate(date, i === 0),
+                items: [],
+                isToday: i === 0
+              }
+            })
         )
       }
 
-      const results = await Promise.all(dayPromises)
+      let results = []
+      try {
+        console.log('Executing Promise.all with', dayPromises.length, 'promises')
+        
+        // Add a timeout to prevent hanging
+        const timeoutPromise = new Promise((_, reject) => 
+          setTimeout(() => reject(new Error('Query timeout after 10 seconds')), 10000)
+        )
+        
+        results = await Promise.race([
+          Promise.all(dayPromises),
+          timeoutPromise
+        ])
+        
+        console.log('Fetched results:', results)
+      } catch (error) {
+        console.error('Error in Promise.all:', error)
+        // Continue with empty results instead of returning
+        results = Array(daysToLoad).fill(null).map((_, i) => {
+          const date = new Date(today)
+          date.setDate(date.getDate() - i)
+          return {
+            date: getUserDateString(date, userTimezone),
+            displayDate: formatDisplayDate(date, i === 0),
+            items: [],
+            isToday: i === 0
+          }
+        })
+        console.log('Using empty results due to error')
+      }
+      
       // Reverse to show oldest first (at top)
       const reversedResults = results.reverse()
+      console.log('Reversed results:', reversedResults)
+      console.log('Total days with data:', reversedResults.filter(d => d.items.length > 0).length)
       
       setDays(reversedResults)
       setLoading(false)
+      console.log('Loading set to false, days state updated')
       
       // Set the oldest loaded date for infinite scroll
       if (reversedResults.length > 0) {

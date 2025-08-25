@@ -29,10 +29,7 @@ export function AuthForm() {
       } else {
         // Show success message for sign in
         setMessage('Successfully signed in! Redirecting...')
-        // Force a page refresh after successful sign in to ensure clean state
-        setTimeout(() => {
-          window.location.href = '/'
-        }, 500)
+        // The auth state change will trigger the redirect
       }
     } catch (error) {
       setMessage('An unexpected error occurred')

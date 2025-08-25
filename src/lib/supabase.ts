@@ -9,6 +9,7 @@ export const supabase = createClient(supabaseUrl, supabaseAnonKey, {
     autoRefreshToken: true,
     detectSessionInUrl: true,
     storageKey: 'sb-pulse-auth-token',
+    storage: typeof window !== 'undefined' ? window.localStorage : undefined,
   },
 })
 

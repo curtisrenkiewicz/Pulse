@@ -5,7 +5,7 @@
 ### 📚 Documentation Structure
 Before making changes, consult the appropriate documentation:
 - **DESIGN_SYSTEM.md** - UI components, colors, typography, spacing, icons
-- **TECHNICAL_SPECS.md** - Database schema, API routes, component patterns, architecture decisions
+- **TECHNICAL_SPECS.md** - Database schema, API routes, component patterns, architecture decisions, authentication patterns
 - **DEVELOPMENT_PLAN.md** - Feature roadmap and implementation phases
 - **PRD.md** - Product requirements and user stories
 - **SESSION_NOTES.md** - Recent development decisions and changes
