@@ -809,7 +809,7 @@ export function TimelineRedesign({ user: propsUser, userTimezone: propsTimezone 
             opacity: loading ? 0 : 1
           }}
         >
-          <div className="max-w-[776px] mx-auto px-3 pt-10">
+          <div className="max-w-[776px] mx-auto px-3 pt-10 flex flex-col gap-6">
             {/* Loading indicator for infinite scroll */}
             {loadingMore && (
               <div className="text-center py-4 text-[rgba(0,0,0,0.4)]">
@@ -819,16 +819,16 @@ export function TimelineRedesign({ user: propsUser, userTimezone: propsTimezone 
             
             {/* Beginning of journey message - only show when not in focus mode and showing multiple days */}
             {!focusMode && days.length > 1 && reachedBeginning && firstEntryDate && (
-              <div className="mb-12 text-center">
-                <div className="inline-block">
-                  <div className="flex justify-center mb-4">
-                    <SignatureIcon className="text-[rgba(0,0,0,0.32)]" size={36} />
-                  </div>
-                  <p className="text-base text-[rgba(0,0,0,0.44)] mb-2">
-                    This is where your journey began
-                  </p>
-                  <p className="text-sm text-[rgba(0,0,0,0.3)]">
+              <div className="flex flex-col items-center gap-4 pb-10">
+                <div className="relative w-9 h-9">
+                  <SignatureIcon className="text-[rgba(0,0,0,0.32)]" size={36} />
+                </div>
+                <div className="flex flex-col items-center gap-1">
+                  <p className="text-xs font-medium text-[rgba(0,0,0,0.32)] tracking-[0.36px] leading-[17px]">
                     {formatDatePart(firstEntryDate)}
+                  </p>
+                  <p className="text-base font-normal text-[rgba(0,0,0,0.64)] tracking-[-0.192px] leading-5">
+                    This is where your journey began
                   </p>
                 </div>
               </div>
@@ -836,7 +836,6 @@ export function TimelineRedesign({ user: propsUser, userTimezone: propsTimezone 
             {days.map((day, dayIndex) => (
               <div 
                 key={day.date}
-                className="mb-12"
                 ref={day.isToday ? todayRef : undefined}
               >
                 {/* Day Header */}

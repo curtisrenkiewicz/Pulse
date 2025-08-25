@@ -103,6 +103,66 @@ collections (
 
 ## Component Architecture
 
+### Icon Implementation Best Practices
+
+**Core Principles:**
+- Icons should use `stroke="currentColor"` to inherit color from parent via Tailwind classes
+- Never hardcode opacity in the SVG - control it through className prop
+- Use consistent prop interface: `className` and `size`
+- Default size should match most common usage
+
+**Implementation Pattern:**
+```jsx
+// ✅ CORRECT - Clean, flexible icon component
+export const IconName = ({ className = "", size = 20 }: IconProps) => (
+  <svg 
+    width={size} 
+    height={size} 
+    viewBox="0 0 20 20" 
+    fill="none" 
+    className={className}
+  >
+    <path 
+      d="..." 
+      stroke="currentColor" 
+      strokeWidth="1.5" 
+      strokeLinecap="round"
+    />
+  </svg>
+)
+
+// Usage - control color and opacity via className
+<IconName className="text-[rgba(0,0,0,0.44)]" size={20} />
+<IconName className="text-black/30" size={16} />
+```
+
+**What NOT to do:**
+```jsx
+// ❌ WRONG - Hardcoded opacity in SVG
+<path stroke="currentColor" strokeOpacity="0.32" />
+
+// ❌ WRONG - Fixed colors in SVG
+<path stroke="#666666" />
+<path stroke="rgba(0,0,0,0.32)" />
+
+// ❌ WRONG - Inconsistent prop interfaces
+export const Icon = ({ color, opacity, width, height }) => ...
+```
+
+**Standard Icon Sizes:**
+- 16px - Small inline icons, compact UI elements
+- 20px - Default size for most UI icons
+- 36px - Large icons for special sections (like signature)
+
+**Color/Opacity Guidelines:**
+- Use Tailwind's opacity utilities: `text-black/30` instead of `text-[rgba(0,0,0,0.3)]`
+- Common opacity values in the design:
+  - 12% - Subtle connecting lines (`text-black/12`)
+  - 32% - Secondary/inactive elements (`text-black/32`)
+  - 44% - Semi-prominent UI elements (`text-black/44`)
+  - 64% - Body text (`text-black/64`)
+  - 88% - Headings/primary text (`text-black/88`)
+
 ### Component & Animation Patterns
 
 **When to Create Components vs Inline Solutions:**
