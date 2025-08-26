@@ -129,6 +129,12 @@ body {
   animation: draw 2s ease-out forwards;
 }
 
+/* Hide signature icon path before animation */
+.signature-hidden path {
+  stroke-dasharray: 200;
+  stroke-dashoffset: 200;
+}
+
 .animate-fade-in-delayed {
   opacity: 0;
   animation: fade-in 0.8s ease-out 0.25s forwards;

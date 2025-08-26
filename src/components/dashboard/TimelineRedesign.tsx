@@ -283,7 +283,10 @@ export function TimelineRedesign({ user: propsUser, userTimezone: propsTimezone 
       (entries) => {
         entries.forEach((entry) => {
           if (entry.isIntersecting && !journeyAnimated) {
-            setJourneyAnimated(true)
+            // Add a 400ms delay before starting the animation
+            setTimeout(() => {
+              setJourneyAnimated(true)
+            }, 400)
           }
         })
       },
@@ -1045,7 +1048,7 @@ export function TimelineRedesign({ user: propsUser, userTimezone: propsTimezone 
               <div ref={journeyBeganRef} className="flex flex-col items-center gap-4 pb-10">
                 <div className="relative w-9 h-9">
                   <SignatureIcon 
-                    className={`text-[rgba(0,0,0,0.32)] ${journeyAnimated ? 'animate-draw' : ''}`} 
+                    className={`text-[rgba(0,0,0,0.32)] ${journeyAnimated ? 'animate-draw' : 'signature-hidden'}`} 
                     size={36} 
                   />
                 </div>
