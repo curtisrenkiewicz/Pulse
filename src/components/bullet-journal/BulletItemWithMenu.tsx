@@ -8,7 +8,7 @@ interface BulletItemWithMenuProps {
   item: Partial<BulletItem>
   isLast?: boolean
   onStateChange?: (newState: { type?: BulletItem['bullet_type'], status?: BulletItem['status'] }) => void
-  onMigrate?: (destination: 'next-day' | 'monthly-log' | 'future-log') => void
+  onMigrate?: (destination: 'today' | 'next-day' | 'monthly-log' | 'future-log') => void
 }
 
 const getIconForItem = (item: Partial<BulletItem>) => {

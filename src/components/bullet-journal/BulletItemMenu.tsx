@@ -13,7 +13,7 @@ import { CheckmarkIcon, CrossSmallIcon, ArrowRightIcon, ArrowLeftIcon, CalendarI
 interface BulletItemMenuProps {
   children: React.ReactNode
   onStateChange: (type?: string, status?: string) => void
-  onMigrate?: (destination: 'next-day' | 'monthly-log' | 'future-log') => void
+  onMigrate?: (destination: 'today' | 'next-day' | 'monthly-log' | 'future-log') => void
   currentType: string
   currentStatus?: string
 }
@@ -31,7 +31,7 @@ export function BulletItemMenu({
     setShowMigrationOptions(true)
   }
   
-  const handleMigrationSelect = (destination: 'next-day' | 'monthly-log' | 'future-log') => {
+  const handleMigrationSelect = (destination: 'today' | 'next-day' | 'monthly-log' | 'future-log') => {
     onMigrate?.(destination)
     setShowMigrationOptions(false)
   }
@@ -48,13 +48,22 @@ export function BulletItemMenu({
         {showMigrationOptions ? (
           /* Migration options view */
           <div className="px-1 py-0">
+            {/* Today */}
+            <DropdownMenuItem 
+              className="flex items-center gap-2.5 px-2 py-1 h-7 rounded-lg hover:bg-[rgba(0,0,0,0.03)] focus:bg-[rgba(0,0,0,0.03)] cursor-pointer"
+              onClick={() => handleMigrationSelect('today')}
+            >
+              <CalendarIcon className="text-[rgba(0,0,0,0.44)]" size={20} />
+              <span className="text-sm font-medium text-[rgba(0,0,0,0.88)] font-['Inter']">Today</span>
+            </DropdownMenuItem>
+            
             {/* Next Day */}
             <DropdownMenuItem 
               className="flex items-center gap-2.5 px-2 py-1 h-7 rounded-lg hover:bg-[rgba(0,0,0,0.03)] focus:bg-[rgba(0,0,0,0.03)] cursor-pointer"
               onClick={() => handleMigrationSelect('next-day')}
             >
               <CalendarIcon className="text-[rgba(0,0,0,0.44)]" size={20} />
-              <span className="text-sm font-medium text-[rgba(0,0,0,0.88)] font-['Inter']">Next Day</span>
+              <span className="text-sm font-medium text-[rgba(0,0,0,0.88)] font-['Inter']">Tomorrow</span>
             </DropdownMenuItem>
             
             {/* Monthly Log */}

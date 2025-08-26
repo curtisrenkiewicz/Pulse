@@ -515,7 +515,7 @@ export function TimelineRedesign({ user: propsUser, userTimezone: propsTimezone 
 
   const [migrationInProgress, setMigrationInProgress] = useState(false)
   
-  const handleMigration = async (item: Partial<BulletItemType>, destination: 'next-day' | 'monthly-log' | 'future-log') => {
+  const handleMigration = async (item: Partial<BulletItemType>, destination: 'today' | 'next-day' | 'monthly-log' | 'future-log') => {
     if (!item.id || !user || !userTimezone || migrationInProgress) return
     
     setMigrationInProgress(true)
@@ -540,7 +540,31 @@ export function TimelineRedesign({ user: propsUser, userTimezone: propsTimezone 
       let destinationLogId = null
       let destinationType = null
       
-      if (destination === 'next-day') {
+      if (destination === 'today') {
+        // Get today's date in user timezone
+        const todayStr = getUserDateString(getTodayInUserTimezone(userTimezone), userTimezone)
+        
+        // Find or create today's daily log
+        let { data: dailyLog } = await supabase
+          .from('daily_logs')
+          .select('id')
+          .eq('user_id', user.id)
+          .eq('date', todayStr)
+          .single()
+          
+        if (!dailyLog) {
+          const { data: newLog } = await supabase
+            .from('daily_logs')
+            .insert({ user_id: user.id, date: todayStr })
+            .select()
+            .single()
+          dailyLog = newLog
+        }
+        
+        destinationLogId = dailyLog?.id
+        destinationType = 'daily_log_id'
+        
+      } else if (destination === 'next-day') {
         // Get tomorrow's date in user timezone
         const today = getTodayInUserTimezone(userTimezone)
         const tomorrow = new Date(today)
@@ -612,23 +636,31 @@ export function TimelineRedesign({ user: propsUser, userTimezone: propsTimezone 
           .single()
         
         // Update the UI to show the new item in the destination
-        if (newItem && destination === 'next-day') {
-          const tomorrow = new Date(getTodayInUserTimezone(userTimezone))
-          tomorrow.setDate(tomorrow.getDate() + 1)
-          const tomorrowStr = getUserDateString(tomorrow, userTimezone)
+        if (newItem && (destination === 'today' || destination === 'next-day')) {
+          let targetDateStr: string
+          let targetDate: Date
+          
+          if (destination === 'today') {
+            targetDate = getTodayInUserTimezone(userTimezone)
+            targetDateStr = getUserDateString(targetDate, userTimezone)
+          } else {
+            targetDate = new Date(getTodayInUserTimezone(userTimezone))
+            targetDate.setDate(targetDate.getDate() + 1)
+            targetDateStr = getUserDateString(targetDate, userTimezone)
+          }
           
           setDays(prev => {
             const newDays = [...prev]
-            const tomorrowIndex = newDays.findIndex(d => d.date === tomorrowStr)
+            const targetIndex = newDays.findIndex(d => d.date === targetDateStr)
             
-            if (tomorrowIndex >= 0) {
-              // Tomorrow already exists in the timeline, add the item
+            if (targetIndex >= 0) {
+              // Target date already exists in the timeline, add the item
               // Check if it doesn't already exist to avoid duplicates
-              const itemExists = newDays[tomorrowIndex].items.some(i => i.id === newItem.id)
+              const itemExists = newDays[targetIndex].items.some(i => i.id === newItem.id)
               if (!itemExists) {
-                newDays[tomorrowIndex].items.unshift(newItem)
+                newDays[targetIndex].items.unshift(newItem)
               }
-            } else {
+            } else if (destination === 'next-day') {
               // Tomorrow doesn't exist yet, add it to the timeline
               const todayStr = getUserDateString(getTodayInUserTimezone(userTimezone), userTimezone)
               const todayIndex = newDays.findIndex(d => d.date === todayStr)
@@ -636,8 +668,8 @@ export function TimelineRedesign({ user: propsUser, userTimezone: propsTimezone 
               if (todayIndex >= 0) {
                 // Insert tomorrow right after today
                 const tomorrowSection: DaySection = {
-                  date: tomorrowStr,
-                  displayDate: format(tomorrow, 'EEEE, MMMM d'),
+                  date: targetDateStr,
+                  displayDate: format(targetDate, 'EEEE, MMMM d'),
                   items: [newItem],
                   isToday: false
                 }
