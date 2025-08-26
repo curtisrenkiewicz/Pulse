@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { categorizeText } from '@/lib/openai'
 import { getDefaultSymbol } from '@/lib/bulletSymbols'
+import { createServerSupabaseClient } from '@/lib/supabase'
 import OpenAI from 'openai'
 import type { BulletItem } from '@/lib/types'
 
@@ -16,13 +17,31 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ error: 'No text provided' }, { status: 400 })
     }
     
+    // Get user's recent corrections to improve accuracy
+    let userCorrections: Array<{ text: string; predicted: string; actual: string }> = []
+    if (userId) {
+      const supabase = createServerSupabaseClient()
+      const { data: corrections } = await supabase
+        .from('ai_corrections')
+        .select('original_text, ai_predicted_type, user_corrected_type')
+        .eq('user_id', userId)
+        .order('created_at', { ascending: false })
+        .limit(20)
+      
+      userCorrections = corrections?.map(c => ({
+        text: c.original_text,
+        predicted: c.ai_predicted_type,
+        actual: c.user_corrected_type,
+      })) || []
+    }
+    
     // First, try to intelligently split the text into multiple items
     const segments = await splitTextIntoItems(text)
     
     // Then categorize each segment
     const items = await Promise.all(
       segments.map(async (segment) => {
-        const category = await categorizeText(segment, userId)
+        const category = await categorizeText(segment, userCorrections)
         return {
           text: segment.trim(),
           bullet_type: category.type,

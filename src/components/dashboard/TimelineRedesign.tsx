@@ -793,6 +793,12 @@ export function TimelineRedesign({ user: propsUser, userTimezone: propsTimezone 
         e.preventDefault()
         setShowPreview(true)
       }
+      
+      // Toggle Pulsey chat with Cmd+J
+      if (e.key === 'j' && e.metaKey && !isTyping) {
+        e.preventDefault()
+        setShowChatSidebar(prev => !prev)
+      }
     }
     window.addEventListener('keydown', handleKeyPress)
     return () => window.removeEventListener('keydown', handleKeyPress)
