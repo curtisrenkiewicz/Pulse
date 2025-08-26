@@ -1050,9 +1050,9 @@ export function TimelineRedesign({ user: propsUser, userTimezone: propsTimezone 
           position: 'relative',
           marginRight: showChatSidebar ? '0' : '-344px' // -344px is negative width of sidebar
         }}>
-        {/* Header - 40px height to match main header */}
-        <div className="h-10 flex items-center justify-between px-2 border-b border-[rgba(0,0,0,0.07)]">
-          <div className="flex items-center gap-3">
+        {/* Header - 40px height, no bottom border */}
+        <div className="h-10 flex items-center justify-between px-2">
+          <div className="flex items-center gap-2">
             <IconButton size={20}>
               <ClockIcon className="text-[rgba(0,0,0,0.44)]" size={20} />
             </IconButton>
@@ -1069,27 +1069,64 @@ export function TimelineRedesign({ user: propsUser, userTimezone: propsTimezone 
         </div>
 
         {/* Chat Messages Container */}
-        <div className="flex-1 flex flex-col justify-end gap-6 p-4">
-          {/* Pulsey message */}
-          <div className="flex flex-col gap-2">
-            <div className="flex items-center gap-2">
+        <div className="flex-1 flex flex-col justify-end gap-6 pb-4 px-4">
+          {/* User message */}
+          <div className="flex flex-col gap-2 pl-16">
+            <div className="bg-[rgba(0,0,0,0.04)] rounded-2xl px-3.5 py-1.5">
+              <p className="text-sm font-normal text-[#5e5e5e] leading-[21px]">
+                It's a good idea right? Idk it is something I've been thinking about for Scout
+              </p>
+            </div>
+          </div>
+          
+          {/* AI message */}
+          <div className="flex flex-col gap-2 px-1">
+            <div className="flex items-center gap-2 py-0.5">
               <PulseyAvatar size={20} />
-              <span className="text-xs font-medium text-[rgba(0,0,0,0.44)] leading-[17px]">
+              <span className="text-xs font-medium text-[rgba(0,0,0,0.44)] leading-[17px] tracking-[0.36px]">
                 Pulsey
               </span>
             </div>
-            <p className="text-xs font-normal text-[#5e5e5e] leading-[17px]">
-              {focusMode 
-                ? "Focus mode is on. You're only seeing today's entries."
-                : "Your timeline shows your recent days in chronological order."}
-            </p>
+            <div className="px-1">
+              <p className="text-sm font-normal text-[#5e5e5e] leading-[21px] mb-2">
+                Yes—strong idea for Scout. The "chief-of-staff" entry point lowers friction, hides agent sprawl, and lets you mix search, knowledge, and specialized skills with a single ask.
+              </p>
+              <p className="text-sm font-normal text-[#5e5e5e] leading-[21px] mb-2">
+                What makes it compelling:
+              </p>
+              <ul className="list-disc ml-5 mb-2">
+                <li className="text-sm font-normal text-[#5e5e5e] leading-[21px] mb-2">
+                  One channel to rule them all: email or tag-in, routed automatically
+                </li>
+                <li className="text-sm font-normal text-[#5e5e5e] leading-[21px] mb-2">
+                  Flexible knowledge hubs to control context and sources per use case
+                </li>
+                <li className="text-sm font-normal text-[#5e5e5e] leading-[21px]">
+                  Summarized, actionable replies instead of raw tool output
+                </li>
+              </ul>
+              <p className="text-sm font-normal text-[#5e5e5e] leading-[21px] mb-2">
+                Watchouts
+              </p>
+              <ul className="list-disc ml-5">
+                <li className="text-sm font-normal text-[#5e5e5e] leading-[21px] mb-2">
+                  Orchestration costs: routing accuracy, timeouts, retries, and latency budgets
+                </li>
+                <li className="text-sm font-normal text-[#5e5e5e] leading-[21px] mb-2">
+                  Permissions across hubs and integrations
+                </li>
+                <li className="text-sm font-normal text-[#5e5e5e] leading-[21px]">
+                  Observability: traces, audits, and explanations for "why this answer"
+                </li>
+              </ul>
+            </div>
           </div>
         </div>
 
         {/* Input Area */}
         <div className="p-2">
-          <div className="backdrop-blur-[6px] bg-[rgba(0,0,0,0.03)] rounded-2xl p-3 h-24 flex flex-col gap-4">
-            <div className="flex-1 flex items-start">
+          <div className="bg-white border border-[rgba(0,0,0,0.1)] shadow-[0px_2px_2px_0px_rgba(0,0,0,0.04)] rounded-2xl p-3 h-[108px] min-h-[108px] max-h-[304px] flex flex-col justify-between">
+            <div className="flex-1 flex items-start px-1 pb-4">
               <span className="text-base font-medium text-[rgba(0,0,0,0.32)] leading-[22px] tracking-[-0.384px]">
                 Ask me anything...
               </span>
@@ -1109,8 +1146,8 @@ export function TimelineRedesign({ user: propsUser, userTimezone: propsTimezone 
       {/* Floating Pulsey Avatar with fade transition */}
       <button
         onClick={() => setShowChatSidebar(true)}
-        className={`fixed bottom-6 right-6 cursor-pointer hover:opacity-80 transition-all duration-300 ${
-          showChatSidebar ? 'opacity-0 pointer-events-none scale-50' : 'opacity-100 scale-100'
+        className={`fixed bottom-6 right-6 cursor-pointer transition-all duration-300 ${
+          showChatSidebar ? 'opacity-0 pointer-events-none scale-50' : 'opacity-60 hover:opacity-100 scale-100'
         }`}
         style={{ zIndex: 30 }}
       >
