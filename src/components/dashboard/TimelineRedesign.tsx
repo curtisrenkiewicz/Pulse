@@ -4,6 +4,7 @@ import { useState, useEffect, useRef } from 'react'
 import { useAuth } from '@/hooks/useAuth'
 import { supabase } from '@/lib/supabase'
 import { getUserDateString, getTodayInUserTimezone } from '@/lib/dateUtils'
+import { format } from 'date-fns'
 import { TimezoneDetector } from '@/components/TimezoneDetector'
 import { VanishingInput, type VanishingInputRef } from '@/components/bullet-journal/VanishingInput'
 import { BulletItemWithMenu } from '@/components/bullet-journal/BulletItemWithMenu'
@@ -512,6 +513,150 @@ export function TimelineRedesign({ user: propsUser, userTimezone: propsTimezone 
     })
   }
 
+  const [migrationInProgress, setMigrationInProgress] = useState(false)
+  
+  const handleMigration = async (item: Partial<BulletItemType>, destination: 'next-day' | 'monthly-log' | 'future-log') => {
+    if (!item.id || !user || !userTimezone || migrationInProgress) return
+    
+    setMigrationInProgress(true)
+    
+    try {
+      // Mark original item as migrated
+      await supabase
+        .from('bullet_items')
+        .update({ 
+          status: 'migrated',
+          symbol: '→'
+        })
+        .eq('id', item.id)
+        
+      // Update UI immediately
+      handleItemUpdated(item.id, {
+        status: 'migrated',
+        symbol: '→'
+      })
+      
+      // Create new item in destination
+      let destinationLogId = null
+      let destinationType = null
+      
+      if (destination === 'next-day') {
+        // Get tomorrow's date in user timezone
+        const today = getTodayInUserTimezone(userTimezone)
+        const tomorrow = new Date(today)
+        tomorrow.setDate(tomorrow.getDate() + 1)
+        const tomorrowStr = getUserDateString(tomorrow, userTimezone)
+        
+        // Find or create tomorrow's daily log
+        let { data: dailyLog } = await supabase
+          .from('daily_logs')
+          .select('id')
+          .eq('user_id', user.id)
+          .eq('date', tomorrowStr)
+          .single()
+          
+        if (!dailyLog) {
+          const { data: newLog } = await supabase
+            .from('daily_logs')
+            .insert({ user_id: user.id, date: tomorrowStr })
+            .select()
+            .single()
+          dailyLog = newLog
+        }
+        
+        destinationLogId = dailyLog?.id
+        destinationType = 'daily_log_id'
+        
+      } else if (destination === 'monthly-log') {
+        // Get current month in user timezone
+        const today = getTodayInUserTimezone(userTimezone)
+        const month = today.getMonth() + 1 // JavaScript months are 0-indexed
+        const year = today.getFullYear()
+        
+        // Find or create monthly log
+        let { data: monthlyLog } = await supabase
+          .from('monthly_logs')
+          .select('id')
+          .eq('user_id', user.id)
+          .eq('month', month)
+          .eq('year', year)
+          .single()
+          
+        if (!monthlyLog) {
+          const { data: newLog } = await supabase
+            .from('monthly_logs')
+            .insert({ user_id: user.id, month, year })
+            .select()
+            .single()
+          monthlyLog = newLog
+        }
+        
+        destinationLogId = monthlyLog?.id
+        destinationType = 'monthly_log_id'
+      }
+      
+      // Create the new item in the destination
+      if (destinationLogId && destinationType) {
+        const { data: newItem } = await supabase
+          .from('bullet_items')
+          .insert({
+            user_id: user.id,
+            [destinationType]: destinationLogId,
+            text: item.text,
+            bullet_type: 'task',
+            status: 'incomplete',
+            symbol: '○',
+            order_index: 0
+          })
+          .select()
+          .single()
+        
+        // Update the UI to show the new item in the destination
+        if (newItem && destination === 'next-day') {
+          const tomorrow = new Date(getTodayInUserTimezone(userTimezone))
+          tomorrow.setDate(tomorrow.getDate() + 1)
+          const tomorrowStr = getUserDateString(tomorrow, userTimezone)
+          
+          setDays(prev => {
+            const newDays = [...prev]
+            const tomorrowIndex = newDays.findIndex(d => d.date === tomorrowStr)
+            
+            if (tomorrowIndex >= 0) {
+              // Tomorrow already exists in the timeline, add the item
+              // Check if it doesn't already exist to avoid duplicates
+              const itemExists = newDays[tomorrowIndex].items.some(i => i.id === newItem.id)
+              if (!itemExists) {
+                newDays[tomorrowIndex].items.unshift(newItem)
+              }
+            } else {
+              // Tomorrow doesn't exist yet, add it to the timeline
+              const todayStr = getUserDateString(getTodayInUserTimezone(userTimezone), userTimezone)
+              const todayIndex = newDays.findIndex(d => d.date === todayStr)
+              
+              if (todayIndex >= 0) {
+                // Insert tomorrow right after today
+                const tomorrowSection: DaySection = {
+                  date: tomorrowStr,
+                  displayDate: format(tomorrow, 'EEEE, MMMM d'),
+                  items: [newItem],
+                  isToday: false
+                }
+                newDays.splice(todayIndex + 1, 0, tomorrowSection)
+              }
+            }
+            
+            return newDays
+          })
+        }
+      }
+      
+    } catch (error) {
+      console.error('Migration failed:', error)
+    } finally {
+      setMigrationInProgress(false)
+    }
+  }
+
   const handleStateChange = async (item: Partial<BulletItemType>, newState: { type?: BulletItemType['bullet_type'], status?: BulletItemType['status'] }) => {
     if (!item.id) return
 
@@ -930,6 +1075,7 @@ export function TimelineRedesign({ user: propsUser, userTimezone: propsTimezone 
                           item={item}
                           isLast={isLast}
                           onStateChange={(newState) => handleStateChange(item, newState)}
+                          onMigrate={(destination) => handleMigration(item, destination)}
                         />
                       </div>
                     )

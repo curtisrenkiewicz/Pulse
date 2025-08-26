@@ -1,19 +1,25 @@
 'use client'
 
 import { BulletItemMenu } from './BulletItemMenu'
-import { CheckmarkIcon, CrossLargeIcon, CircleIcon, CalendarIcon, PencilWaveIcon } from '@/components/icons/PulseIcons'
+import { CheckmarkIcon, CrossLargeIcon, CircleIcon, CalendarIcon, PencilWaveIcon, ArrowRightIcon } from '@/components/icons/PulseIcons'
 import type { BulletItem } from '@/lib/types'
 
 interface BulletItemWithMenuProps {
   item: Partial<BulletItem>
   isLast?: boolean
   onStateChange?: (newState: { type?: BulletItem['bullet_type'], status?: BulletItem['status'] }) => void
+  onMigrate?: (destination: 'next-day' | 'monthly-log' | 'future-log') => void
 }
 
 const getIconForItem = (item: Partial<BulletItem>) => {
   // For cancelled items, always show cross
   if (item.status === 'cancelled') {
     return <CrossLargeIcon className="text-[rgba(0,0,0,0.32)]" size={16} />
+  }
+  
+  // For migrated items, always show arrow
+  if (item.status === 'migrated') {
+    return <ArrowRightIcon className="text-[rgba(0,0,0,0.32)]" size={16} />
   }
   
   switch (item.bullet_type) {
@@ -31,7 +37,7 @@ const getIconForItem = (item: Partial<BulletItem>) => {
   }
 }
 
-export function BulletItemWithMenu({ item, isLast = false, onStateChange }: BulletItemWithMenuProps) {
+export function BulletItemWithMenu({ item, isLast = false, onStateChange, onMigrate }: BulletItemWithMenuProps) {
   const textColor = item.status === 'cancelled' || item.status === 'complete' 
     ? 'text-[rgba(0,0,0,0.44)]' 
     : 'text-[rgba(0,0,0,0.64)]'
@@ -54,6 +60,7 @@ export function BulletItemWithMenu({ item, isLast = false, onStateChange }: Bull
         {/* Icon with menu */}
         <BulletItemMenu
           onStateChange={handleStateChange}
+          onMigrate={onMigrate}
           currentType={item.bullet_type || 'task'}
           currentStatus={item.status}
         >
