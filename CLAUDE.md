@@ -2,6 +2,11 @@
 
 ## Project: Pulse - Bullet Journal App
 
+### 🚨 CRITICAL RULES
+- **ALWAYS use the official shadcn CLI to add components**: `npx shadcn@latest add [component-name]`
+- **NEVER manually create or copy shadcn component files** - this leads to outdated/incorrect versions
+- **If a shadcn component needs to be added, use the CLI method without exception**
+
 ### 📚 Documentation Structure
 Before making changes, consult the appropriate documentation:
 - **DESIGN_SYSTEM.md** - UI components, colors, typography, spacing, icons
