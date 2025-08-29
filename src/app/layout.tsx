@@ -9,8 +9,12 @@ const inter = Inter({
 });
 
 export const metadata: Metadata = {
-  title: "Pulse - Digital Bullet Journal",
+  title: "Pulse",
   description: "AI-enhanced bullet journaling for mindful productivity",
+  icons: {
+    icon: "/icon.svg",
+    apple: "/apple-icon.svg",
+  },
 };
 
 export default function RootLayout({
