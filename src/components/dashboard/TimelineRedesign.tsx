@@ -65,12 +65,15 @@ export function TimelineRedesign({ user: propsUser, userTimezone: propsTimezone 
   const inputRef = useRef<VanishingInputRef>(null)
   const journeyBeganRef = useRef<HTMLDivElement>(null)
   const [journeyAnimated, setJourneyAnimated] = useState(false)
+  const [hasInitiallyScrolled, setHasInitiallyScrolled] = useState(false)
+  const prevFocusModeRef = useRef(focusMode)
 
   // Fetch the user's first journal entry date
   useEffect(() => {
     if (!user || !userTimezone) return
     
     const fetchFirstEntryDate = async () => {
+      console.log('Fetching first entry date for user:', user.id)
       // Query for the oldest bullet item
       const { data, error } = await supabase
         .from('bullet_items')
@@ -80,10 +83,15 @@ export function TimelineRedesign({ user: propsUser, userTimezone: propsTimezone 
         .limit(1)
         .single()
       
+      console.log('First entry query result:', { data, error })
+      
       if (data && !error) {
         // Store the date of the first entry in user's timezone
         const firstDate = getUserDateString(new Date(data.created_at), userTimezone)
+        console.log('Setting firstEntryDate to:', firstDate)
         setFirstEntryDate(firstDate)
+      } else {
+        console.log('No first entry found or error occurred')
       }
     }
     
@@ -92,12 +100,20 @@ export function TimelineRedesign({ user: propsUser, userTimezone: propsTimezone 
 
   // Load multiple days of bullet items
   useEffect(() => {
-    console.log('Timeline useEffect - user:', user?.id, 'timezone:', userTimezone)
+    console.log('Timeline useEffect - user:', user?.id, 'timezone:', userTimezone, 'firstEntryDate:', firstEntryDate)
     // Wait for firstEntryDate to be fetched before loading timeline
+    // This prevents multiple loads while firstEntryDate is still being fetched
     if (!user || !userTimezone) return
+    
+    // Skip loading if we're not in focus mode and haven't fetched firstEntryDate yet
+    // (Focus mode only loads 1 day so it doesn't need firstEntryDate)
+    if (!focusMode && firstEntryDate === null) {
+      console.log('Waiting for firstEntryDate to be fetched before loading timeline')
+      return
+    }
 
     const loadTimelineItems = async () => {
-      console.log('Loading timeline items for user:', user.id)
+      console.log('Loading timeline items for user:', user.id, 'with firstEntryDate:', firstEntryDate)
       // Set loading true at the start
       setLoading(true)
       
@@ -173,7 +189,17 @@ export function TimelineRedesign({ user: propsUser, userTimezone: propsTimezone 
             .eq('date', dateStr)
             .maybeSingle()
             .then(({ data, error }) => {
-              console.log(`Query result for ${dateStr}:`, { data, error })
+              // Special logging for problematic dates
+              if (dateStr === '2025-08-15' || dateStr === '2025-08-30') {
+                console.log(`🔍 SPECIAL CHECK for ${dateStr}:`, { 
+                  data, 
+                  error,
+                  hasItems: data?.bullet_items?.length > 0,
+                  itemCount: data?.bullet_items?.length || 0
+                })
+              } else {
+                console.log(`Query result for ${dateStr}:`, { data, error })
+              }
               if (error) {
                 console.error('Error loading day:', dateStr, error)
               }
@@ -252,18 +278,28 @@ export function TimelineRedesign({ user: propsUser, userTimezone: propsTimezone 
     loadTimelineItems()
   }, [user, userTimezone, focusMode, firstEntryDate])
   
-  // Scroll to today when exiting focus mode
+  // Scroll to today when exiting focus mode or on initial load
   useEffect(() => {
-    // Only scroll when exiting focus mode (going from true to false)
+    // Only scroll when exiting focus mode (going from true to false) OR on initial load
     if (!focusMode && days.length > 0) {
-      // Use double requestAnimationFrame to ensure DOM is fully updated
-      requestAnimationFrame(() => {
+      // Check if this is initial load or just exiting focus mode
+      const isInitialLoad = !hasInitiallyScrolled && days.length === 14
+      const wasInFocusMode = prevFocusModeRef.current
+      
+      if (isInitialLoad || wasInFocusMode) {
+        // Use double requestAnimationFrame to ensure DOM is fully updated
         requestAnimationFrame(() => {
-          scrollToToday()
+          requestAnimationFrame(() => {
+            scrollToToday()
+            if (isInitialLoad) {
+              setHasInitiallyScrolled(true)
+            }
+          })
         })
-      })
+      }
     }
-  }, [focusMode, days.length])
+    prevFocusModeRef.current = focusMode
+  }, [focusMode, days.length, hasInitiallyScrolled])
   
   // Auto-focus input when entering focus mode
   useEffect(() => {
@@ -809,8 +845,17 @@ export function TimelineRedesign({ user: propsUser, userTimezone: propsTimezone 
 
   // Load more historical data when scrolling near top
   const loadMoreDays = async () => {
+    console.log('📜 loadMoreDays called:', {
+      loadingMore,
+      oldestLoadedDate,
+      user: !!user,
+      userTimezone,
+      focusMode,
+      reachedBeginning
+    })
     if (loadingMore || !oldestLoadedDate || !user || !userTimezone || focusMode || reachedBeginning) return
     
+    console.log('📜 INFINITE SCROLL: Loading more days starting from', oldestLoadedDate)
     setLoadingMore(true)
     
     const oldestDate = new Date(oldestLoadedDate)
@@ -842,6 +887,15 @@ export function TimelineRedesign({ user: propsUser, userTimezone: propsTimezone 
           .eq('date', dateStr)
           .maybeSingle()
           .then(({ data, error }) => {
+            // Special logging for problematic dates
+            if (dateStr === '2025-08-15' || dateStr === '2025-08-30') {
+              console.log(`🔍 INFINITE SCROLL CHECK for ${dateStr}:`, { 
+                data, 
+                error,
+                hasItems: data?.bullet_items?.length > 0,
+                itemCount: data?.bullet_items?.length || 0
+              })
+            }
             return {
               date: dateStr,
               displayDate: formatDisplayDate(date, false),
@@ -888,8 +942,12 @@ export function TimelineRedesign({ user: propsUser, userTimezone: propsTimezone 
       }, 1000)
       
       // Check for infinite scroll trigger (within 200px of top)
-      if (scrollContainer.scrollTop < 200 && !loadingMore && !focusMode) {
-        loadMoreDays()
+      const scrollTop = scrollContainer.scrollTop
+      if (scrollTop < 200) {
+        console.log('📍 Near top of scroll:', { scrollTop, loadingMore, focusMode })
+        if (!loadingMore && !focusMode) {
+          loadMoreDays()
+        }
       }
       
       // Check if ANY part of today section is visible (accounting for input area)
