@@ -4,7 +4,7 @@ import { useState, useEffect, useRef } from 'react'
 import { useAuth } from '@/hooks/useAuth'
 import { supabase } from '@/lib/supabase'
 import { getUserDateString, getTodayInUserTimezone } from '@/lib/dateUtils'
-import { format } from 'date-fns'
+import { format, subDays } from 'date-fns'
 import { TimezoneDetector } from '@/components/TimezoneDetector'
 import { VanishingInput, type VanishingInputRef } from '@/components/bullet-journal/VanishingInput'
 import { BulletItemWithMenu } from '@/components/bullet-journal/BulletItemWithMenu'
@@ -165,8 +165,8 @@ export function TimelineRedesign({ user: propsUser, userTimezone: propsTimezone 
       console.log('Starting to build queries for', daysToLoad, 'days')
 
       for (let i = 0; i < daysToLoad; i++) {
-        const date = new Date(today)
-        date.setDate(date.getDate() - i)
+        // Use subDays for consistent date calculation
+        const date = subDays(today, i)
         const dateStr = getUserDateString(date, userTimezone)
         console.log(`Day ${i}: querying for date ${dateStr}`)
         
@@ -243,8 +243,7 @@ export function TimelineRedesign({ user: propsUser, userTimezone: propsTimezone 
         console.error('Error in Promise.all:', error)
         // Continue with empty results instead of returning
         results = Array(daysToLoad).fill(null).map((_, i) => {
-          const date = new Date(today)
-          date.setDate(date.getDate() - i)
+          const date = subDays(today, i)
           return {
             date: getUserDateString(date, userTimezone),
             displayDate: formatDisplayDate(date, i === 0),
@@ -858,15 +857,21 @@ export function TimelineRedesign({ user: propsUser, userTimezone: propsTimezone 
     console.log('📜 INFINITE SCROLL: Loading more days starting from', oldestLoadedDate)
     setLoadingMore(true)
     
-    const oldestDate = new Date(oldestLoadedDate)
+    // Parse the date string properly to avoid UTC issues
+    const [year, month, day] = oldestLoadedDate.split('-').map(Number)
+    const oldestDate = new Date(year, month - 1, day)
+    console.log('🔍 Base date for calculation:', oldestDate.toISOString(), 'from string:', oldestLoadedDate)
     const dayPromises = []
     let hitBoundary = false
     
     // Load up to 14 more days before the oldest loaded date
+    // Start from 1 to skip the already-loaded oldest date
+    console.log('🔍 Starting loop from i=1 to i=14 (skipping day 0 which is', oldestLoadedDate, ')')
     for (let i = 1; i <= 14; i++) {
-      const date = new Date(oldestDate)
-      date.setDate(date.getDate() - i)
+      // Use subDays for consistent date calculation
+      const date = subDays(oldestDate, i)
       const dateStr = getUserDateString(date, userTimezone)
+      console.log(`🔍 Loop i=${i}: subDays result=${date.toISOString()}, resulting dateStr=${dateStr}`)
       
       // Check if we've reached before the first entry date
       if (firstEntryDate && dateStr < firstEntryDate) {
